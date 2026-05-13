@@ -1,0 +1,68 @@
+{
+  "name": "comformhex",
+  "version": "0.1.0",
+  "description": "Conforming Q1/Hex local refinement kernel and browser workbench.",
+  "private": true,
+  "author": "Huilong Ren <hlren@tongji.edu.cn>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "examples/browser",
+    "examples/output",
+    "test",
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "RELEASE.md",
+    "tsconfig.json",
+    "tsconfig.build.json"
+  ],
+  "keywords": [
+    "mesh",
+    "finite-element",
+    "hex",
+    "hexahedral",
+    "quad",
+    "refinement",
+    "vtk",
+    "inp"
+  ],
+  "license": "UNLICENSED",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "desktop:prepare": "npm run pages:build && node scripts/prepare-desktop-app.mjs",
+    "desktop:run": "npm run desktop:prepare && electron release/desktop-app",
+    "desktop:mac": "npm run desktop:prepare && node scripts/package-desktop-macos.mjs && node scripts/zip-desktop-macos.mjs",
+    "desktop:win": "npm run desktop:prepare && node scripts/package-desktop-windows.mjs && node scripts/zip-desktop-windows.mjs",
+    "examples:vtk": "npm run build && node dist/examples/generate-vtk-examples.js",
+    "offline:heap": "node scripts/run-offline-auto.mjs --heap-info",
+    "offline:run": "node scripts/run-offline-auto.mjs",
+    "offline:run:direct": "node scripts/run-offline-workflow.mjs",
+    "pages:build": "npm run examples:vtk && npm run standalone:build && node scripts/prepare-release.mjs",
+    "pages:serve": "node scripts/serve-pages.mjs",
+    "prepack": "npm run build",
+    "release": "npm test && npm run examples:vtk && npm run standalone:build && node scripts/prepare-release.mjs && npm pack --pack-destination release --cache .npm-cache",
+    "standalone:build": "node scripts/build-standalone-lite.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "@types/node": "^25.6.0",
+    "electron": "^41.3.0",
+    "typescript": "^5.9.3"
+  }
+}

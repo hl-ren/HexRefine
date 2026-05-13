@@ -1,0 +1,9 @@
+node_modules/
+.npm-cache/
+release/
+dist/
+.DS_Store
+._*
+*.log
+tmp-*
+backups/
