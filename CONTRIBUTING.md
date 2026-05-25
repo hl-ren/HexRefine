@@ -1,8 +1,5 @@
 # Contributing To HexRefine
 
-The current working tree is the regular HexRefine edition. A separate free
-open-source community edition may be cut later from an earlier baseline.
-
 Contributions are welcome, especially around
 correctness tests, GUI usability, import/export compatibility, and
 documentation.
