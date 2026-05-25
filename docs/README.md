@@ -1,10 +1,10 @@
-# ComformHex Docs
+# HexRefine Docs
 
-This folder is the project-local documentation boundary for ComformHex.
+This folder is the project-local documentation boundary for HexRefine.
 
 The project is intended to build, test, and run from this directory without
 depending on documentation files from the workspace it was split from. Add new
-ComformHex documents here and link them from this README.
+HexRefine documents here and link them from this README.
 
 Useful entry points:
 

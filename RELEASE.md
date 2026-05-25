@@ -2,13 +2,13 @@
 
 This project can produce two release artifacts:
 
-- A static web bundle in `release/comformhex-<version>/web/`.
+- A static web bundle in `release/hexrefine-<version>/web/`.
 - A stable GitHub Pages bundle in `release/pages/`.
 - A portable Windows desktop app in `release/desktop/` when `npm run desktop:win`
   is run.
 - Portable macOS desktop apps in `release/desktop/` when `npm run desktop:mac`
   is run.
-- An npm source/runtime tarball in `release/comformhex-<version>.tgz`.
+- An npm source/runtime tarball in `release/hexrefine-<version>.tgz`.
 
 ## Build A Release
 
@@ -29,7 +29,7 @@ The release script runs:
 After `npm run release`, serve the generated release directory:
 
 ```bash
-python3 -m http.server 8080 --directory release/comformhex-0.1.0/web
+python3 -m http.server 8080 --directory release/hexrefine-0.1.0/web
 ```
 
 Then open:
@@ -46,7 +46,7 @@ npm run pages:serve
 
 ## Release Contents
 
-The generated `release/comformhex-<version>/` directory contains:
+The generated `release/hexrefine-<version>/` directory contains:
 
 - `dist/`: compiled runtime JavaScript and TypeScript declarations.
 - `src/`: TypeScript source.
@@ -60,8 +60,8 @@ The generated `release/comformhex-<version>/` directory contains:
 
 For a GitHub release, attach:
 
-- `release/comformhex-<version>.tgz`
-- The `release/comformhex-<version>/` directory as a zip archive if desired.
+- `release/hexrefine-<version>.tgz`
+- The `release/hexrefine-<version>/` directory as a zip archive if desired.
 
 For a static website, upload the contents of:
 
@@ -88,11 +88,11 @@ npm run desktop:win
 The build writes:
 
 ```txt
-release/desktop/ComformHex-win32-x64/
-release/desktop/ComformHex-win32-x64.zip
+release/desktop/HexRefine-win32-x64/
+release/desktop/HexRefine-win32-x64.zip
 ```
 
-Copy the zip file to Windows, extract it, and double-click `ComformHex.exe`.
+Copy the zip file to Windows, extract it, and double-click `HexRefine.exe`.
 See `docs/windows-desktop.md` for details.
 
 ## macOS Desktop Apps
@@ -106,12 +106,12 @@ npm run desktop:mac
 The build writes:
 
 ```txt
-release/desktop/ComformHex-darwin-arm64/
-release/desktop/ComformHex-darwin-arm64.zip
-release/desktop/ComformHex-darwin-x64/
-release/desktop/ComformHex-darwin-x64.zip
+release/desktop/HexRefine-darwin-arm64/
+release/desktop/HexRefine-darwin-arm64.zip
+release/desktop/HexRefine-darwin-x64/
+release/desktop/HexRefine-darwin-x64.zip
 ```
 
 Use the arm64 zip for Apple Silicon Macs and the x64 zip for Intel Macs. The
-apps are unsigned, so macOS may require right-clicking `ComformHex.app` and
+apps are unsigned, so macOS may require right-clicking `HexRefine.app` and
 choosing "Open" on first launch. See `docs/macos-desktop.md` for details.

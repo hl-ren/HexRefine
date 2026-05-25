@@ -9,7 +9,7 @@ import {
   iterateNativeSessionInpLines,
   iterateNativeSessionVtkLines,
   missingSetSummary,
-  replayComformHexCommandScript
+  replayHexRefineCommandScript
 } from "../dist/index.js";
 
 async function main() {
@@ -31,10 +31,10 @@ async function main() {
   const raw = await fs.readFile(scriptPath, "utf8");
   const script = JSON.parse(raw);
   const memoryPlan = offlineMemoryPlan({
-    requestedMb: process.env.COMFORMHEX_OFFLINE_HEAP_MB
+    requestedMb: process.env.HEXREFINE_OFFLINE_HEAP_MB ?? process.env.COMFORMHEX_OFFLINE_HEAP_MB
   });
 
-  const replay = replayComformHexCommandScript(script, {
+  const replay = replayHexRefineCommandScript(script, {
     strict: options.strict,
     selectionStrategy: options.selectionStrategy,
     ...(options.gridOverride ? { gridOverride: options.gridOverride } : {})
@@ -51,14 +51,14 @@ async function main() {
   if (outputVtkPath) {
     await fs.mkdir(path.dirname(outputVtkPath), { recursive: true });
     await writeLinesToFile(outputVtkPath, iterateNativeSessionVtkLines(nativePlan, {
-      title: "ComformHex offline replay export"
+      title: "HexRefine offline replay export"
     }));
   }
 
   if (outputInpPath) {
     await fs.mkdir(path.dirname(outputInpPath), { recursive: true });
     await writeLinesToFile(outputInpPath, iterateNativeSessionInpLines(nativePlan, {
-      title: "ComformHex offline replay export",
+      title: "HexRefine offline replay export",
       materials: replay.cellSetMaterials
     }));
   }
@@ -82,7 +82,7 @@ async function main() {
       freeMb: memoryPlan.freeMb,
       maxOldSpaceMb: memoryPlan.currentHeapLimitMb,
       requestedMaxOldSpaceMb: memoryPlan.maxOldSpaceMb,
-      source: process.env.COMFORMHEX_OFFLINE_MEMORY_SOURCE ?? memoryPlan.source
+      source: process.env.HEXREFINE_OFFLINE_MEMORY_SOURCE ?? process.env.COMFORMHEX_OFFLINE_MEMORY_SOURCE ?? memoryPlan.source
     },
     outputs: {
       ...(outputVtkPath ? { vtk: outputVtkPath } : {}),
@@ -287,7 +287,7 @@ function printUsage() {
     "",
     "Memory:",
     "  run-offline-auto.mjs auto-selects Node --max-old-space-size from system RAM.",
-    "  Override with COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB=49152 or 48g if needed."
+    "  Override with HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB=49152 or 48g if needed."
   ].join("\n"));
 }
 

@@ -19,10 +19,10 @@ import {
   prepareExportMesh,
   refinementSessionExportToInp,
   refinementOps,
-  replayComformHexCommandScript
+  replayHexRefineCommandScript
 } from "../dist/index.js";
 
-test("ComformHex project entry exposes mesh selection and non-field refinement", () => {
+test("HexRefine project entry exposes mesh selection and non-field refinement", () => {
   const mesh = createHexUnitCubeMesh(3, 3, 3);
   const selected = meshSelection.selectElementsByDistanceFunction(mesh, (x, y, z) =>
     Math.min(0.75 - x, x - 0.25, 0.75 - y, y - 0.25, 0.75 - z, z - 0.25),
@@ -39,8 +39,8 @@ test("ComformHex project entry exposes mesh selection and non-field refinement",
   assert.equal(report.ok, true);
 });
 
-test("ComformHex project command replay rebuilds a refined mesh with sets", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine project command replay rebuilds a refined mesh with sets", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -77,7 +77,7 @@ test("ComformHex project command replay rebuilds a refined mesh with sets", () =
   assert.equal(checkNoHangingNodes(replay.mesh, 1e-8).ok, true);
 });
 
-test("ComformHex project imports standard Quad and Hex meshes from JSON-like objects", () => {
+test("HexRefine project imports standard Quad and Hex meshes from JSON-like objects", () => {
   const quad = meshFromSerializable({
     nodes: [
       [0, 0],
@@ -114,8 +114,8 @@ test("ComformHex project imports standard Quad and Hex meshes from JSON-like obj
   assert.ok(hexResult.mesh.elements.length > hex.elements.length);
 });
 
-test("ComformHex project command replay supports imported starting meshes", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine project command replay supports imported starting meshes", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.import",
@@ -149,7 +149,7 @@ test("ComformHex project command replay supports imported starting meshes", () =
   assert.ok(replay.mesh.elements.length > 1);
 });
 
-test("ComformHex project imports legacy VTK quad and hex meshes", () => {
+test("HexRefine project imports legacy VTK quad and hex meshes", () => {
   const quadVtk = meshToLegacyVtk({
     kind: "Q1",
     nodes: [
@@ -184,10 +184,10 @@ test("ComformHex project imports legacy VTK quad and hex meshes", () => {
   assert.equal(hex.elements.length, 1);
 });
 
-test("ComformHex project auto-detects Abaqus INP, LS-DYNA K, and VTU meshes from file suffixes", () => {
+test("HexRefine project auto-detects Abaqus INP, LS-DYNA K, and VTU meshes from file suffixes", () => {
   const abaqusInp = [
     "*Heading",
-    "ComformHex Abaqus import",
+    "HexRefine Abaqus import",
     "*Node",
     "10, 0, 0, 0",
     "20, 1, 0, 0",
@@ -243,7 +243,7 @@ test("ComformHex project auto-detects Abaqus INP, LS-DYNA K, and VTU meshes from
   assert.deepEqual(quadVtu.elements, [[1, 2, 3, 4]]);
 });
 
-test("ComformHex project streams legacy VTK lines without changing file content", () => {
+test("HexRefine project streams legacy VTK lines without changing file content", () => {
   const mesh = {
     kind: "H1",
     nodes: [
@@ -271,11 +271,11 @@ test("ComformHex project streams legacy VTK lines without changing file content"
   assert.equal(streamed, text);
 });
 
-test("ComformHex project streams INP lines without changing file content", () => {
+test("HexRefine project streams INP lines without changing file content", () => {
   const exported = buildRefinementSessionExport(createRefinementSession(createHexUnitCubeMesh(1, 1, 1)), {
     mergeNodes: true
   });
-  const options = { title: "ComformHex streaming INP smoke" };
+  const options = { title: "HexRefine streaming INP smoke" };
   const prepared = prepareExportMesh(exported, "H8");
   const streamed = `${[...iteratePreparedInpLines(prepared, options)].join("\n")}\n`;
   const text = refinementSessionExportToInp(exported, options);
@@ -283,7 +283,7 @@ test("ComformHex project streams INP lines without changing file content", () =>
   assert.equal(streamed, text);
 });
 
-test("ComformHex project streams native session VTK and INP without materializing flat elements", () => {
+test("HexRefine project streams native session VTK and INP without materializing flat elements", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(2, 1, 1));
   const sets = {
     cellSets: new Map([["LEFT", ["e1"]]]),
@@ -299,8 +299,8 @@ test("ComformHex project streams native session VTK and INP without materializin
     mergeTolerance: 1e-9,
     sets
   });
-  const vtkOptions = { title: "ComformHex native session VTK smoke" };
-  const inpOptions = { title: "ComformHex native session INP smoke" };
+  const vtkOptions = { title: "HexRefine native session VTK smoke" };
+  const inpOptions = { title: "HexRefine native session INP smoke" };
 
   const flatVtk = `${[...iterateLegacyVtkLines(prepared.mesh, vtkOptions)].join("\n")}\n`;
   const nativeVtk = `${[...iterateNativeSessionVtkLines(plan, vtkOptions)].join("\n")}\n`;
@@ -312,7 +312,7 @@ test("ComformHex project streams native session VTK and INP without materializin
   assert.equal(plan.activeCellIds.length, 2);
 });
 
-test("ComformHex project converts Q1 export meshes to T3 and Q9 before writing", () => {
+test("HexRefine project converts Q1 export meshes to T3 and Q9 before writing", () => {
   const exported = {
     mesh: {
       kind: "Q1",
@@ -348,7 +348,7 @@ test("ComformHex project converts Q1 export meshes to T3 and Q9 before writing",
   assert.deepEqual(q9.sets.nodeSets.get("EDGE"), [1, 2]);
 });
 
-test("ComformHex project converts H1 export meshes to H20 before writing", () => {
+test("HexRefine project converts H1 export meshes to H20 before writing", () => {
   const exported = {
     mesh: {
       kind: "H1",
@@ -380,7 +380,7 @@ test("ComformHex project converts H1 export meshes to H20 before writing", () =>
   assert.deepEqual(h20.sets.cellSets.get("VOL"), [1]);
 });
 
-test("ComformHex project reports user-friendly unsupported VTK cell type errors", () => {
+test("HexRefine project reports user-friendly unsupported VTK cell type errors", () => {
   const unsupportedVtk = [
     "# vtk DataFile Version 3.0",
     "triangle",
@@ -402,7 +402,7 @@ test("ComformHex project reports user-friendly unsupported VTK cell type errors"
   );
 });
 
-test("ComformHex project hanging-node check handles highly nonuniform face scales", () => {
+test("HexRefine project hanging-node check handles highly nonuniform face scales", () => {
   const largeHex = {
     nodes: [
       [0, 0, 0],
@@ -450,7 +450,7 @@ test("ComformHex project hanging-node check handles highly nonuniform face scale
   assert.equal(report.hanging.length, 0);
 });
 
-test("ComformHex project can directly refine a local Hex on a non-block imported mesh", () => {
+test("HexRefine project can directly refine a local Hex on a non-block imported mesh", () => {
   const base = createHexUnitCubeMesh(3, 1, 2);
   const mesh = {
     kind: "H1",
@@ -467,8 +467,8 @@ test("ComformHex project can directly refine a local Hex on a non-block imported
   assert.equal(checkNoHangingNodes(result.mesh, 1e-8).ok, true);
 });
 
-test("ComformHex project exports refined sessions to VTK and INP", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine project exports refined sessions to VTK and INP", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -506,9 +506,9 @@ test("ComformHex project exports refined sessions to VTK and INP", () => {
     mergeNodes: true,
     mergeTolerance: 1e-8
   });
-  const vtk = meshToLegacyVtk(exported.mesh, { title: "ComformHex project export" });
+  const vtk = meshToLegacyVtk(exported.mesh, { title: "HexRefine project export" });
   const inp = refinementSessionExportToInp(exported, {
-    title: "ComformHex project export",
+    title: "HexRefine project export",
     materials: replay.cellSetMaterials
   });
 

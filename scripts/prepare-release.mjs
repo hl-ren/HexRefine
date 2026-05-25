@@ -57,7 +57,7 @@ const manifest = {
     module: "dist/index.js",
     types: "dist/index.d.ts",
     browser: "web/index.html",
-    workbench: "web/examples/browser/comformhex.html"
+    workbench: "web/examples/browser/hexrefine.html"
   },
   commands: {
     test: "npm test",
@@ -81,8 +81,8 @@ function webIndexHtml() {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="0; url=./examples/browser/comformhex.html">
-    <title>ComformHex</title>
+    <meta http-equiv="refresh" content="0; url=./examples/browser/hexrefine.html">
+    <title>HexRefine</title>
     <style>
       body {
         margin: 0;
@@ -101,8 +101,8 @@ function webIndexHtml() {
   </head>
   <body>
     <main>
-      <h1>ComformHex</h1>
-      <p><a href="./examples/browser/comformhex.html">Open the browser workbench</a></p>
+      <h1>HexRefine</h1>
+      <p><a href="./examples/browser/hexrefine.html">Open the browser workbench</a></p>
     </main>
   </body>
 </html>
@@ -110,10 +110,10 @@ function webIndexHtml() {
 }
 
 function browserRuntimeConfig(appMode, guiElementLimit) {
-  return `window.COMFORMHEX_RUNTIME = ${JSON.stringify({
+  return `window.HEXREFINE_RUNTIME = ${JSON.stringify({
     appMode,
     guiElementLimit
-  }, null, 2)};\n`;
+  }, null, 2)};\nwindow.COMFORMHEX_RUNTIME = window.HEXREFINE_RUNTIME;\n`;
 }
 
 function copyClean(source, target) {

@@ -113,6 +113,13 @@ export interface ComformHexReplaySelectionDiagnostic {
   notice?: string;
 }
 
+export type HexRefineCommand = ComformHexCommand;
+export type HexRefineCommandScript = ComformHexCommandScript;
+export type HexRefineMaterial = ComformHexMaterial;
+export type HexRefineReplayResult = ComformHexReplayResult;
+export type ReplayHexRefineCommandScriptOptions = ReplayComformHexCommandScriptOptions;
+export type HexRefineReplaySelectionDiagnostic = ComformHexReplaySelectionDiagnostic;
+
 const replayFaceSets = {
   Q1: [[0, 1, 2, 3]],
   H1: [
@@ -157,7 +164,7 @@ export function replayComformHexCommandScript(
   options: ReplayComformHexCommandScriptOptions = {}
 ): ComformHexReplayResult {
   if (!script || !Array.isArray(script.commands)) {
-    throw new Error("ComformHex command script must contain a commands array");
+    throw new Error("HexRefine command script must contain a commands array");
   }
 
   const state: ReplayState = {
@@ -181,7 +188,7 @@ export function replayComformHexCommandScript(
   }
 
   if (!state.session) {
-    throw new Error("ComformHex command script did not create a grid");
+    throw new Error("HexRefine command script did not create a grid");
   }
 
   const active = buildActiveMeshWithMap(state.session, {
@@ -201,6 +208,8 @@ export function replayComformHexCommandScript(
     replayedCommandCount: state.replayedCommandCount
   };
 }
+
+export const replayHexRefineCommandScript = replayComformHexCommandScript;
 
 function replayCommand(
   state: ReplayState,
@@ -966,7 +975,7 @@ function replayShowHidden(state: ReplayState): void {
 
 function requireSession(state: ReplayState): RefinementSession {
   if (!state.session) {
-    throw new Error("ComformHex command script must start with grid.generate or grid.import before mesh operations");
+      throw new Error("HexRefine command script must start with grid.generate or grid.import before mesh operations");
   }
   return state.session;
 }

@@ -16,10 +16,10 @@ await copyClean(join(root, "LICENSE"), join(appRoot, "LICENSE"));
 await copyClean(join(root, "README.md"), join(appRoot, "README.md"));
 
 await writeFile(join(appRoot, "package.json"), `${JSON.stringify({
-  name: "comformhex-desktop",
-  productName: "ComformHex",
+  name: "hexrefine-desktop",
+  productName: "HexRefine",
   version: packageJson.version,
-  description: "Desktop wrapper for the ComformHex browser workbench.",
+  description: "Desktop wrapper for the HexRefine browser workbench.",
   private: true,
   type: "commonjs",
   main: "main.cjs",

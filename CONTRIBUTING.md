@@ -1,4 +1,4 @@
-# Contributing To ComformHex Community Edition
+# Contributing To HexRefine Community Edition
 
 The current working tree is the private/custom performance edition. This file
 is intended for the future public community edition, which should be cut from a

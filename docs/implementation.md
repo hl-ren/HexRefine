@@ -1,4 +1,4 @@
-# ComformHex Implementation Notes
+# HexRefine Implementation Notes
 
 This document describes the implementation choices behind the public features.
 
@@ -211,7 +211,7 @@ conversion step before streaming lines.
 `scripts/run-offline-auto.mjs` is a small launcher: it reads system RAM,
 reserves memory for the OS, then starts Node.js with an automatic
 `--max-old-space-size` before running the dense replay. Set
-`COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB` to override the auto choice for special
+`HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB` to override the auto choice for special
 runs.
 
 The next deeper optimization target is fully incremental export setup:

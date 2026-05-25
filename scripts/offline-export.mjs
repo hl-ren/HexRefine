@@ -14,7 +14,7 @@ import {
   missingSetSummary,
   prepareExportMesh,
   preparedExportToInp,
-  replayComformHexCommandScript
+  replayHexRefineCommandScript
 } from "../dist/index.js";
 
 export async function runOfflineExportJob(script, options = {}) {
@@ -25,7 +25,7 @@ export async function runOfflineExportJob(script, options = {}) {
   const includeInp = options.includeInp === true;
   const scaleFactor = normalizeScaleFactor(options.scaleFactor ?? 1.2);
   const gridPlan = buildOfflineGridPlan(script, scaleFactor);
-  const replay = replayComformHexCommandScript(script, {
+  const replay = replayHexRefineCommandScript(script, {
     strict: false,
     selectionStrategy: "replay",
     ...(gridPlan.gridOverride ? { gridOverride: gridPlan.gridOverride } : {})
@@ -44,7 +44,7 @@ export async function runOfflineExportJob(script, options = {}) {
   });
   const prepared = prepareExportMesh(exported, options.exportKind);
   const inpOptions = {
-    title: "ComformHex offline export",
+    title: "HexRefine offline export",
     materials: replay.cellSetMaterials
   };
   const inpText = !options.outputDir && includeInp
@@ -74,7 +74,7 @@ export async function runOfflineExportJob(script, options = {}) {
 
   if (!options.outputDir) {
     const vtkText = meshToLegacyVtk(prepared.mesh, {
-      title: "ComformHex offline export"
+      title: "HexRefine offline export"
     });
     return {
       manifest,
@@ -83,14 +83,14 @@ export async function runOfflineExportJob(script, options = {}) {
     };
   }
 
-  const baseName = sanitizeBaseName(options.baseName ?? "comformhex-offline");
+  const baseName = sanitizeBaseName(options.baseName ?? "hexrefine-offline");
   await mkdir(options.outputDir, { recursive: true });
   const vtkPath = join(options.outputDir, `${baseName}.vtk`);
   const inpPath = includeInp ? join(options.outputDir, `${baseName}.inp`) : undefined;
   const jobPath = join(options.outputDir, `${baseName}-job.json`);
   await writeLinesToFile(
     vtkPath,
-    iterateLegacyVtkLines(prepared.mesh, { title: "ComformHex offline export" })
+    iterateLegacyVtkLines(prepared.mesh, { title: "HexRefine offline export" })
   );
   if (inpPath) {
     await writeLinesToFile(inpPath, iteratePreparedInpLines(prepared, inpOptions));
@@ -117,7 +117,7 @@ async function runNativeOfflineExport(script, options, replay, gridPlan, scaleFa
     }
   });
   const inpOptions = {
-    title: "ComformHex offline export",
+    title: "HexRefine offline export",
     materials: replay.cellSetMaterials
   };
   const missing = missingSetSummary(plan.sets);
@@ -144,7 +144,7 @@ async function runNativeOfflineExport(script, options, replay, gridPlan, scaleFa
   };
 
   if (!options.outputDir) {
-    const vtkText = `${[...iterateNativeSessionVtkLines(plan, { title: "ComformHex offline export" })].join("\n")}\n`;
+    const vtkText = `${[...iterateNativeSessionVtkLines(plan, { title: "HexRefine offline export" })].join("\n")}\n`;
     const inpText = includeInp
       ? `${[...iterateNativeSessionInpLines(plan, inpOptions)].join("\n")}\n`
       : undefined;
@@ -155,12 +155,12 @@ async function runNativeOfflineExport(script, options, replay, gridPlan, scaleFa
     };
   }
 
-  const baseName = sanitizeBaseName(options.baseName ?? "comformhex-offline");
+  const baseName = sanitizeBaseName(options.baseName ?? "hexrefine-offline");
   await mkdir(options.outputDir, { recursive: true });
   const vtkPath = join(options.outputDir, `${baseName}.vtk`);
   const inpPath = includeInp ? join(options.outputDir, `${baseName}.inp`) : undefined;
   const jobPath = join(options.outputDir, `${baseName}-job.json`);
-  await writeLinesToFile(vtkPath, iterateNativeSessionVtkLines(plan, { title: "ComformHex offline export" }));
+  await writeLinesToFile(vtkPath, iterateNativeSessionVtkLines(plan, { title: "HexRefine offline export" }));
   if (inpPath) {
     await writeLinesToFile(inpPath, iterateNativeSessionInpLines(plan, inpOptions));
   }
@@ -329,5 +329,5 @@ function toPoint3(value) {
 
 function sanitizeBaseName(value) {
   const clean = String(value || "").trim().replace(/[^A-Za-z0-9._-]/g, "-");
-  return clean || "comformhex-offline";
+  return clean || "hexrefine-offline";
 }

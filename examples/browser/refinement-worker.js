@@ -46,7 +46,7 @@ self.addEventListener("message", (event) => {
         scalars.selected = prepared.sourceElementIds.map((sourceElementId) => selected.has(sourceElementId) ? 1 : 0);
       }
       const parts = linesToBlobParts(iterateLegacyVtkLines(exportMesh, {
-        title: "ComformHex workbench mesh",
+        title: "HexRefine workbench mesh",
         cellScalars: scalars
       }));
       self.postMessage({
@@ -64,7 +64,7 @@ self.addEventListener("message", (event) => {
       const exported = buildExport(request);
       const prepared = prepareExportMesh(exported, request.exportKind ?? request.elementKind);
       const parts = linesToBlobParts(iteratePreparedInpLines(prepared, {
-        title: "ComformHex workbench mesh",
+        title: "HexRefine workbench mesh",
         elementKind: request.exportKind ?? request.elementKind,
         materials: request.materials ?? []
       }));

@@ -22,7 +22,7 @@ let server;
 let serverUrl;
 const offlineJobs = new Map();
 
-app.setName("ComformHex");
+app.setName("HexRefine");
 
 app.whenReady().then(async () => {
   try {
@@ -31,7 +31,7 @@ app.whenReady().then(async () => {
   } catch (error) {
     await dialog.showMessageBox({
       type: "error",
-      title: "ComformHex failed to start",
+      title: "HexRefine failed to start",
       message: error instanceof Error ? error.message : String(error)
     });
     app.quit();
@@ -52,7 +52,7 @@ function createWindow(url) {
     height: 940,
     minWidth: 980,
     minHeight: 680,
-    title: "ComformHex",
+    title: "HexRefine",
     backgroundColor: "#0c0f12",
     webPreferences: {
       contextIsolation: true,
@@ -138,12 +138,12 @@ async function handleDesktopRequest(request, response, webRoot) {
 async function handleOfflineExportRequest(request, response) {
   const body = await readJsonBody(request);
   const jobId = randomUUID();
-  const outputDir = path.join(tmpdir(), "comformhex-offline-jobs", jobId);
+  const outputDir = path.join(tmpdir(), "hexrefine-offline-jobs", jobId);
   const job = await runOfflineExportJobDesktop(body?.script, {
     scaleFactor: body?.scaleFactor,
     exportKind: body?.exportKind,
     outputDir,
-    baseName: "comformhex-offline",
+    baseName: "hexrefine-offline",
     includeInp: body?.includeInp === true
   });
   offlineJobs.set(jobId, {
@@ -157,18 +157,18 @@ async function handleOfflineExportRequest(request, response) {
     summary: job.manifest,
     files: {
       vtk: {
-        name: "comformhex-offline.vtk",
-        url: `/api/offline-export/${jobId}/comformhex-offline.vtk`
+        name: "hexrefine-offline.vtk",
+        url: `/api/offline-export/${jobId}/hexrefine-offline.vtk`
       },
       ...(job.inpPath ? {
         inp: {
-          name: "comformhex-offline.inp",
-          url: `/api/offline-export/${jobId}/comformhex-offline.inp`
+          name: "hexrefine-offline.inp",
+          url: `/api/offline-export/${jobId}/hexrefine-offline.inp`
         }
       } : {}),
       job: {
-        name: "comformhex-offline-job.json",
-        url: `/api/offline-export/${jobId}/comformhex-offline-job.json`
+        name: "hexrefine-offline-job.json",
+        url: `/api/offline-export/${jobId}/hexrefine-offline-job.json`
       }
     }
   });
@@ -185,11 +185,11 @@ function handleOfflineDownloadRequest(requestUrl, response) {
     writeJson(response, 404, { ok: false, error: "offline export job expired or missing" });
     return;
   }
-  const filePath = fileName === "comformhex-offline.vtk"
+  const filePath = fileName === "hexrefine-offline.vtk"
     ? job.vtkPath
-    : fileName === "comformhex-offline.inp"
+    : fileName === "hexrefine-offline.inp"
       ? job.inpPath
-      : fileName === "comformhex-offline-job.json"
+      : fileName === "hexrefine-offline-job.json"
         ? job.jobPath
         : undefined;
   if (!filePath || !existsSync(filePath)) {
@@ -253,7 +253,7 @@ async function runOfflineExportJobDesktop(script, options = {}) {
   const includeInp = options.includeInp === true;
   const scaleFactor = normalizeScaleFactor(options.scaleFactor ?? 1.2);
   const gridPlan = buildOfflineGridPlan(script, scaleFactor);
-  const replay = api.replayComformHexCommandScript(script, {
+  const replay = (api.replayHexRefineCommandScript ?? api.replayComformHexCommandScript)(script, {
     strict: false,
     selectionStrategy: "replay",
     ...(gridPlan.gridOverride ? { gridOverride: gridPlan.gridOverride } : {})
@@ -269,7 +269,7 @@ async function runOfflineExportJobDesktop(script, options = {}) {
   const prepared = api.prepareExportMesh(exported, options.exportKind);
   const inpText = includeInp
     ? api.preparedExportToInp(prepared, {
-        title: "ComformHex offline export",
+        title: "HexRefine offline export",
         materials: replay.cellSetMaterials
       })
     : undefined;
@@ -297,12 +297,12 @@ async function runOfflineExportJobDesktop(script, options = {}) {
 
   const fsPromises = await import("node:fs/promises");
   await fsPromises.mkdir(options.outputDir, { recursive: true });
-  const vtkPath = path.join(options.outputDir, "comformhex-offline.vtk");
-  const inpPath = includeInp ? path.join(options.outputDir, "comformhex-offline.inp") : undefined;
-  const jobPath = path.join(options.outputDir, "comformhex-offline-job.json");
+  const vtkPath = path.join(options.outputDir, "hexrefine-offline.vtk");
+  const inpPath = includeInp ? path.join(options.outputDir, "hexrefine-offline.inp") : undefined;
+  const jobPath = path.join(options.outputDir, "hexrefine-offline-job.json");
   await writeLinesToFileDesktop(
     vtkPath,
-    api.iterateLegacyVtkLines(prepared.mesh, { title: "ComformHex offline export" })
+    api.iterateLegacyVtkLines(prepared.mesh, { title: "HexRefine offline export" })
   );
   if (inpPath && inpText !== undefined) {
     await fsPromises.writeFile(inpPath, inpText, "utf8");

@@ -1,6 +1,6 @@
 # Security Policy
 
-ComformHex is a local mesh-processing and browser-workbench project. It is not
+HexRefine is a local mesh-processing and browser-workbench project. It is not
 designed to process untrusted files in a hardened sandbox.
 
 ## Supported Version

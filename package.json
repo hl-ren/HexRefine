@@ -1,9 +1,14 @@
 {
-  "name": "comformhex",
+  "name": "hexrefine",
   "version": "0.1.0",
-  "description": "Conforming Q1/Hex local refinement kernel and browser workbench.",
+  "description": "HexRefine conforming Q1/Hex local refinement kernel and browser workbench.",
   "private": true,
   "author": "Huilong Ren <hlren@tongji.edu.cn>",
+  "homepage": "https://hl-ren.github.io/HexRefine/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hl-ren/HexRefine.git"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -194,7 +194,7 @@ export function buildNativeSessionExportPlan(
 
 export function* iterateLegacyVtkLines(mesh: Mesh | ExportMesh, options: VtkOptions = {}): Generator<string> {
   const spec = vtkCellSpec(mesh);
-  const title = sanitizeTitle(options.title ?? "ComformHex mesh");
+  const title = sanitizeTitle(options.title ?? "HexRefine mesh");
   const scalarEntries = Object.entries(options.cellScalars ?? {});
 
   for (const [name, values] of scalarEntries) {
@@ -241,7 +241,7 @@ export function* iterateLegacyVtkLines(mesh: Mesh | ExportMesh, options: VtkOpti
 
 export function* iterateNativeSessionVtkLines(plan: NativeSessionExportPlan, options: VtkOptions = {}): Generator<string> {
   const spec = nativeSessionVtkSpec(plan.kind);
-  const title = sanitizeTitle(options.title ?? "ComformHex mesh");
+  const title = sanitizeTitle(options.title ?? "HexRefine mesh");
   const scalarEntries = Object.entries(options.cellScalars ?? {});
   for (const [name, values] of scalarEntries) {
     if (values.length !== plan.activeCellIds.length) {
@@ -314,7 +314,7 @@ export function* iterateNativeSessionInpLines(
   const materialBySet = normalizeMaterialEntries(options.materials);
   const spec = nativeSessionVtkSpec(plan.kind);
   yield "*Heading";
-  yield sanitizeTitle(options.title ?? "ComformHex mesh");
+  yield sanitizeTitle(options.title ?? "HexRefine mesh");
   yield "*Node";
 
   for (let index = 0; index < plan.nodes.length; index += 1) {
@@ -351,7 +351,7 @@ export function* iteratePreparedInpLines(
   const elementKind = prepared.mesh.kind;
   const materialBySet = normalizeMaterialEntries(options.materials);
   yield "*Heading";
-  yield sanitizeTitle(options.title ?? "ComformHex mesh");
+  yield sanitizeTitle(options.title ?? "HexRefine mesh");
   yield "*Node";
 
   for (let index = 0; index < prepared.mesh.nodes.length; index += 1) {

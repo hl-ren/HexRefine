@@ -1,6 +1,6 @@
 # Windows Desktop Test App
 
-ComformHex can be packaged as a portable Windows desktop app for easier local
+HexRefine can be packaged as a portable Windows desktop app for easier local
 testing. The desktop app wraps the same static browser workbench with Electron.
 
 ## Build The Windows App
@@ -20,23 +20,23 @@ needed.
 The build writes:
 
 ```txt
-release/desktop/ComformHex-win32-x64/
-release/desktop/ComformHex-win32-x64.zip
+release/desktop/HexRefine-win32-x64/
+release/desktop/HexRefine-win32-x64.zip
 ```
 
 ## Run On Windows
 
-1. Copy `ComformHex-win32-x64.zip` to a Windows machine.
+1. Copy `HexRefine-win32-x64.zip` to a Windows machine.
 2. Extract the zip file.
 3. Open the extracted folder.
-4. Double-click `ComformHex.exe`.
+4. Double-click `HexRefine.exe`.
 
 No Node.js, Python, or server setup is required on the Windows machine.
 
 ## How It Works
 
 The Electron app starts a local `127.0.0.1` static server inside the app process
-and opens the ComformHex browser workbench in a desktop window. This keeps the
+and opens the HexRefine browser workbench in a desktop window. This keeps the
 runtime close to the web version while avoiding `file://` module-worker issues.
 
 The app is currently unsigned. Windows SmartScreen may show a warning the first

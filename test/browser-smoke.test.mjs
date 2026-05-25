@@ -4,16 +4,16 @@ import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
 
-test("ComformHex browser GUI imports the project-local runtime build", async () => {
-  const redirect = await readFile(new URL("examples/browser/comformhex.html", projectRoot), "utf8");
+test("HexRefine browser GUI imports the project-local runtime build", async () => {
+  const redirect = await readFile(new URL("examples/browser/hexrefine.html", projectRoot), "utf8");
   const gui = await readFile(new URL("examples/browser/refinement-gui.html", projectRoot), "utf8");
   const worker = await readFile(new URL("examples/browser/refinement-worker.js", projectRoot), "utf8");
 
   assert.match(redirect, /url=\.\/refinement-gui\.html/);
   assert.match(gui, /from\s+"..\/..\/dist\/index\.js"/);
   assert.match(worker, /from\s+"..\/..\/dist\/index\.js"/);
-  assert.doesNotMatch(gui, /dist\/comformhex\.js/);
-  assert.doesNotMatch(worker, /dist\/comformhex\.js/);
+  assert.doesNotMatch(gui, /dist\/hexrefine\.js/);
+  assert.doesNotMatch(worker, /dist\/hexrefine\.js/);
   assert.match(gui, /meshMergeTolerance\s*=\s*replay\.mergeTolerance\s*\?\?\s*meshMergeTolerance/);
   assert.match(gui, /function\s+buildActiveCellDataFromSession/);
   assert.match(gui, /activeBuildCellIdByElementId/);

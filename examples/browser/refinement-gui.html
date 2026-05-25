@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ComformHex 0.1.0</title>
+    <title>HexRefine 0.1.0</title>
     <style>
       :root {
         --bg: #0c0f12;
@@ -655,7 +655,7 @@
       <aside>
         <div class="title-row">
           <div class="title-block">
-            <h1>ComformHex</h1>
+      <h1>HexRefine</h1>
             <div class="title-meta">Version 0.1.0</div>
           </div>
           <div class="title-tools">
@@ -666,7 +666,7 @@
             <button id="help-open" class="text-button" type="button">Help</button>
           </div>
         </div>
-        <section class="stats-band" aria-label="ComformHex stats">
+      <section class="stats-band" aria-label="HexRefine stats">
           <div><span>Kind</span><strong id="stat-kind">H1</strong></div>
           <div><span>Cells</span><strong id="stat-elements">0</strong></div>
           <div><span>Nodes</span><strong id="stat-nodes">0</strong></div>
@@ -910,7 +910,7 @@
     <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
       <div class="help-sheet">
         <div class="help-topbar">
-          <h2 id="help-title">ComformHex Tutorial</h2>
+            <h2 id="help-title">HexRefine Tutorial</h2>
           <div class="help-actions">
             <div class="help-lang" aria-label="help language">
               <button id="help-lang-en" type="button" aria-pressed="true">EN</button>
@@ -1092,7 +1092,7 @@
         prepareSessionRefineSelection,
         previewRefinementByElementIds,
         regularizeHexSelection,
-        replayComformHexCommandScript,
+        replayHexRefineCommandScript,
         refineSessionPatch,
         redoRefinementSession,
         undoRefinementSession
@@ -1186,9 +1186,12 @@
       const rotateAxisEl = document.querySelector("#rotate-axis");
 
       function resolveRuntimeConfig() {
-        const raw = globalThis.COMFORMHEX_RUNTIME && typeof globalThis.COMFORMHEX_RUNTIME === "object"
-          ? globalThis.COMFORMHEX_RUNTIME
-          : {};
+        const runtimeGlobal = globalThis.HEXREFINE_RUNTIME && typeof globalThis.HEXREFINE_RUNTIME === "object"
+          ? globalThis.HEXREFINE_RUNTIME
+          : globalThis.COMFORMHEX_RUNTIME && typeof globalThis.COMFORMHEX_RUNTIME === "object"
+            ? globalThis.COMFORMHEX_RUNTIME
+            : {};
+        const raw = runtimeGlobal;
         const localHost = window.location.hostname === "127.0.0.1" ||
           window.location.hostname === "localhost" ||
           window.location.hostname === "";
@@ -1282,7 +1285,8 @@
       let coarseSurfaceItemsCache = null;
       let busy = false;
       let workerStatus = "idle";
-      const commandAutosaveKey = "comformhex.commandScript.v1";
+      const commandAutosaveKey = "hexrefine.commandScript.v1";
+      const legacyCommandAutosaveKey = "comformhex.commandScript.v1";
       let commandScript = newCommandScript();
       let commandAutosaveStatus = "ready";
       let guiWorkingSetReleased = false;
@@ -1367,8 +1371,10 @@
       const minSimpleEdgePixels = 1.2;
       const minScreenEdgePixels = 2.4;
       const minScreenFaceAreaPixels = 8;
-      const themeStorageKey = "comformhex.theme";
-      const helpLanguageStorageKey = "comformhex.helpLanguage";
+      const themeStorageKey = "hexrefine.theme";
+      const legacyThemeStorageKey = "comformhex.theme";
+      const helpLanguageStorageKey = "hexrefine.helpLanguage";
+      const legacyHelpLanguageStorageKey = "comformhex.helpLanguage";
       let webglLineRenderer = null;
       let webglPointRenderer = null;
       let webglWorldLineRenderer = null;
@@ -1387,6 +1393,7 @@
         themeModeEl.value = normalized;
         try {
           localStorage.setItem(themeStorageKey, normalized);
+          localStorage.removeItem(legacyThemeStorageKey);
         } catch (error) {
         }
         requestDraw();
@@ -1395,7 +1402,7 @@
       function initializeTheme() {
         let savedTheme = "light";
         try {
-          savedTheme = localStorage.getItem(themeStorageKey) || "light";
+          savedTheme = localStorage.getItem(themeStorageKey) || localStorage.getItem(legacyThemeStorageKey) || "light";
         } catch (error) {
         }
         applyTheme(savedTheme);
@@ -1410,6 +1417,7 @@
         helpLangZhButton?.setAttribute("aria-pressed", String(normalized === "zh"));
         try {
           localStorage.setItem(helpLanguageStorageKey, normalized);
+          localStorage.removeItem(legacyHelpLanguageStorageKey);
         } catch (error) {
         }
       }
@@ -1417,7 +1425,7 @@
       function initializeHelpLanguage() {
         let savedLanguage = "en";
         try {
-          savedLanguage = localStorage.getItem(helpLanguageStorageKey) || "en";
+          savedLanguage = localStorage.getItem(helpLanguageStorageKey) || localStorage.getItem(legacyHelpLanguageStorageKey) || "en";
         } catch (error) {
         }
         applyHelpLanguage(savedLanguage);
@@ -2165,9 +2173,9 @@
 
       function newCommandScript() {
         return {
-          format: "comformhex-command-script",
+          format: "hexrefine-command-script",
           version: 1,
-          app: "ComformHex",
+          app: "HexRefine",
           createdAt: new Date().toISOString(),
           savedAt: new Date().toISOString(),
           commands: []
@@ -2205,6 +2213,7 @@
         commandScript.savedAt = new Date().toISOString();
         try {
           localStorage.setItem(commandAutosaveKey, JSON.stringify(commandScript));
+          localStorage.removeItem(legacyCommandAutosaveKey);
           commandAutosaveStatus = "saved";
         } catch (error) {
           commandAutosaveStatus = "failed";
@@ -2357,7 +2366,7 @@
 
       function exportCommandScript() {
         saveCommandScript();
-        download("comformhex-commands.json", JSON.stringify(commandScript, null, 2), "application/json");
+          download("hexrefine-commands.json", JSON.stringify(commandScript, null, 2), "application/json");
         setStatus(`Exported command script (${commandScript.commands.length} commands).`, true);
       }
 
@@ -2415,7 +2424,7 @@
       async function replayCommandScriptInGui(script, options = {}) {
         try {
           await runWithBusyPause(options.busyMessage ?? "Replaying command script...");
-          const replay = replayComformHexCommandScript(script, { strict: true });
+          const replay = replayHexRefineCommandScript(script, { strict: true });
           applyReplayToGui(script, replay);
           setStatus(options.successMessage ?? `Replayed ${replay.replayedCommandCount} commands.`, true);
           return true;
@@ -2444,7 +2453,7 @@
           return;
         }
         try {
-          const text = localStorage.getItem(commandAutosaveKey);
+          const text = localStorage.getItem(commandAutosaveKey) || localStorage.getItem(legacyCommandAutosaveKey);
           if (!text) {
             setStatus("No autosaved command script is available.", false);
             return;
@@ -4126,7 +4135,7 @@
             selectedElementIds: [...selected],
             lastCellData: lastResult?.cellData ?? []
           });
-          download("comformhex.vtk", response.parts ?? response.text, "text/plain");
+          download("hexrefine.vtk", response.parts ?? response.text, "text/plain");
           reportMissingExportSetSummary(response.missing, `Exported VTK in ${formatMs(response.elapsedMs)}.`);
         } catch (error) {
           setStatus(errorMessage(error), false);
@@ -4152,7 +4161,7 @@
             exportKind,
             materials: [...cellSetMaterials]
           });
-          download("comformhex.inp", response.parts ?? response.text, "text/plain");
+          download("hexrefine.inp", response.parts ?? response.text, "text/plain");
           reportMissingExportSetSummary(response.missing, `Exported INP in ${formatMs(response.elapsedMs)}.`);
         } catch (error) {
           setStatus(errorMessage(error), false);

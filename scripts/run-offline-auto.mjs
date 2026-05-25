@@ -13,7 +13,7 @@ async function main() {
     return;
   }
   const plan = offlineMemoryPlan();
-  process.stderr.write(`[ComformHex offline] memory plan: ${formatMemoryPlan(plan)}\n`);
+  process.stderr.write(`[HexRefine offline] memory plan: ${formatMemoryPlan(plan)}\n`);
 
   const nodeArgs = [
     `--max-old-space-size=${plan.maxOldSpaceMb}`,
@@ -24,6 +24,8 @@ async function main() {
     stdio: "inherit",
     env: {
       ...process.env,
+      HEXREFINE_OFFLINE_HEAP_MB: String(plan.maxOldSpaceMb),
+      HEXREFINE_OFFLINE_MEMORY_SOURCE: plan.source,
       COMFORMHEX_OFFLINE_HEAP_MB: String(plan.maxOldSpaceMb),
       COMFORMHEX_OFFLINE_MEMORY_SOURCE: plan.source
     }

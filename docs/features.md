@@ -1,11 +1,11 @@
-# ComformHex Features
+# HexRefine Features
 
 This document describes what the project supports from a user and integration
 perspective. See `implementation.md` for algorithm details.
 
 ## Mesh Generation
 
-ComformHex can generate structured unit meshes:
+HexRefine can generate structured unit meshes:
 
 - `createQ1UnitSquareMesh(nx, ny)` for quadrilateral Q1 grids.
 - `createHexUnitCubeMesh(nx, ny, nz)` for hexahedral H1 grids.
@@ -107,7 +107,7 @@ identity stable.
 
 ## Export
 
-ComformHex exports:
+HexRefine exports:
 
 - Legacy VTK unstructured grids through `meshToLegacyVtk`.
 - Abaqus-style INP text through `refinementSessionExportToInp`.
@@ -121,7 +121,7 @@ elastic material sections for cell sets.
 The browser workbench records a command script with grid generation,
 refinement, selection, set, material, undo, redo, and delete operations.
 
-`replayComformHexCommandScript` rebuilds the final session state and returns:
+`replayHexRefineCommandScript` rebuilds the final session state and returns:
 
 - The replayed session.
 - The active mesh.
@@ -135,7 +135,7 @@ This makes browser sessions portable and testable.
 
 ## Browser Workbench
 
-`examples/browser/comformhex.html` opens the workbench. It supports:
+`examples/browser/hexrefine.html` opens the workbench. It supports:
 
 - Q1 and H1 grid generation.
 - Q1 and H1 mesh import from JSON and legacy VTK.

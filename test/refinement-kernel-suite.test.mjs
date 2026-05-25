@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-// ComformHex project refinement kernel suite.
+// HexRefine project refinement kernel suite.
 // This file intentionally stays within the project-local runtime build.
 
 import * as api from "../dist/index.js";
@@ -37,7 +37,7 @@ const {
   refineByDistanceFunctionWithReport,
   refineByBoxWithReport,
   defaultRefinementPlanner,
-  replayComformHexCommandScript,
+  replayHexRefineCommandScript,
   parseMeshText,
   refineHexTo13Hex,
   refineHexTo27Hex,
@@ -55,7 +55,7 @@ const {
   undoRefinementSession
 } = api;
 
-test("ComformHex offline memory planner selects a bounded heap from system RAM", async () => {
+test("HexRefine offline memory planner selects a bounded heap from system RAM", async () => {
   const { offlineMemoryPlan } = await import("../scripts/offline-memory.mjs");
   const plan = offlineMemoryPlan();
   assert.equal(Number.isInteger(plan.totalMb), true);
@@ -350,11 +350,11 @@ test("Default refinement planner preserves Q1 and Hex template roles", () => {
   ]);
 });
 
-test("ComformHex command script replays grid, refinement, sets, and materials", () => {
+test("HexRefine command script replays grid, refinement, sets, and materials", () => {
   const script = {
-    format: "comformhex-command-script",
+    format: "hexrefine-command-script",
     version: 1,
-    app: "ComformHex",
+    app: "HexRefine",
     commands: [
       {
         kind: "grid.generate",
@@ -388,7 +388,7 @@ test("ComformHex command script replays grid, refinement, sets, and materials", 
     ]
   };
 
-  const replay = replayComformHexCommandScript(script);
+  const replay = replayHexRefineCommandScript(script);
   assert.equal(replay.replayedCommandCount, 3);
   assert.equal(replay.warnings.length, 0);
   assert.equal(replay.mergeTolerance, 1e-9);
@@ -399,8 +399,8 @@ test("ComformHex command script replays grid, refinement, sets, and materials", 
   assert.equal(checkNoHangingNodes(replay.mesh).ok, true);
 });
 
-test("ComformHex command script reports the default grid merge tolerance", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine command script reports the default grid merge tolerance", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -419,8 +419,8 @@ test("ComformHex command script reports the default grid merge tolerance", () =>
   assert.equal(replay.mergeTolerance, Math.hypot(2, 2, 1) * 1e-10);
 });
 
-test("ComformHex command script replays single-cell pick and hide-pick commands", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine command script replays single-cell pick and hide-pick commands", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -469,8 +469,8 @@ test("ComformHex command script replays single-cell pick and hide-pick commands"
   assert.deepEqual(replay.cellSets.get("VISIBLE"), ["e1"]);
 });
 
-test("ComformHex command script can replay compact keep-mode deletion", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine command script can replay compact keep-mode deletion", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -502,8 +502,8 @@ test("ComformHex command script can replay compact keep-mode deletion", () => {
   assert.equal(replay.mesh.elements[0].every((nodeId) => nodeId >= 1 && nodeId <= replay.mesh.nodes.length), true);
 });
 
-test("ComformHex command script can replay delete undo and redo", () => {
-  const replay = replayComformHexCommandScript({
+test("HexRefine command script can replay delete undo and redo", () => {
+  const replay = replayHexRefineCommandScript({
     commands: [
       {
         kind: "grid.generate",
@@ -540,7 +540,7 @@ test("ComformHex command script can replay delete undo and redo", () => {
   assert.equal(checkNoHangingNodes(replay.mesh).ok, true);
 });
 
-test("ComformHex command script can replay coordinate-box selection on a denser offline grid", () => {
+test("HexRefine command script can replay coordinate-box selection on a denser offline grid", () => {
   const script = {
     commands: [
       {
@@ -581,11 +581,11 @@ test("ComformHex command script can replay coordinate-box selection on a denser 
     ]
   };
 
-  const recorded = replayComformHexCommandScript(script, {
+  const recorded = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "recorded"
   });
-  const replayed = replayComformHexCommandScript(script, {
+  const replayed = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -596,7 +596,7 @@ test("ComformHex command script can replay coordinate-box selection on a denser 
   assert.equal(checkNoHangingNodes(replayed.mesh).ok, true);
 });
 
-test("ComformHex command script can replay coordinate-box removal on a denser offline grid", () => {
+test("HexRefine command script can replay coordinate-box removal on a denser offline grid", () => {
   const script = {
     commands: [
       {
@@ -633,7 +633,7 @@ test("ComformHex command script can replay coordinate-box removal on a denser of
     ]
   };
 
-  const replayed = replayComformHexCommandScript(script, {
+  const replayed = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -642,7 +642,7 @@ test("ComformHex command script can replay coordinate-box removal on a denser of
   assert.equal(checkNoHangingNodes(replayed.mesh).ok, true);
 });
 
-test("ComformHex command script can replay screen-rect selection through recorded mesh-space bounds", () => {
+test("HexRefine command script can replay screen-rect selection through recorded mesh-space bounds", () => {
   const script = {
     commands: [
       {
@@ -679,11 +679,11 @@ test("ComformHex command script can replay screen-rect selection through recorde
     ]
   };
 
-  const recorded = replayComformHexCommandScript(script, {
+  const recorded = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "recorded"
   });
-  const replayed = replayComformHexCommandScript(script, {
+  const replayed = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -694,7 +694,7 @@ test("ComformHex command script can replay screen-rect selection through recorde
   assert.equal(checkNoHangingNodes(replayed.mesh).ok, true);
 });
 
-test("ComformHex command script can replay screen-rect selection through recorded view parameters", () => {
+test("HexRefine command script can replay screen-rect selection through recorded view parameters", () => {
   const script = {
     commands: [
       {
@@ -740,7 +740,7 @@ test("ComformHex command script can replay screen-rect selection through recorde
     ]
   };
 
-  const replayed = replayComformHexCommandScript(script, {
+  const replayed = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 8, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -749,7 +749,7 @@ test("ComformHex command script can replay screen-rect selection through recorde
   assert.deepEqual(replayed.cellSets.get("VIEW"), ["e3", "e4", "e5", "e6"]);
 });
 
-test("ComformHex offline replay filters transition and mixed-level cells before a second refine", () => {
+test("HexRefine offline replay filters transition and mixed-level cells before a second refine", () => {
   const script = {
     commands: [
       {
@@ -796,7 +796,7 @@ test("ComformHex offline replay filters transition and mixed-level cells before 
     ]
   };
 
-  const replayed = replayComformHexCommandScript(script, {
+  const replayed = replayHexRefineCommandScript(script, {
     gridOverride: { nx: 4, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -809,7 +809,7 @@ test("ComformHex offline replay filters transition and mixed-level cells before 
   assert.equal(checkNoHangingNodes(replayed.mesh).ok, true);
 });
 
-test("ComformHex offline replay prefers current screen replay selection over stored refine patch ranges", () => {
+test("HexRefine offline replay prefers current screen replay selection over stored refine patch ranges", () => {
   const replaySelection = {
     kind: "level-rank-range",
     level: 0,
@@ -905,11 +905,11 @@ test("ComformHex offline replay prefers current screen replay selection over sto
     ]
   };
 
-  const coarseReplay = replayComformHexCommandScript(coarseScreenScript, {
+  const coarseReplay = replayHexRefineCommandScript(coarseScreenScript, {
     gridOverride: { nx: 8, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
-  const directReplay = replayComformHexCommandScript(directScript, {
+  const directReplay = replayHexRefineCommandScript(directScript, {
     gridOverride: { nx: 8, ny: 1, nz: 1 },
     selectionStrategy: "replay"
   });
@@ -919,7 +919,7 @@ test("ComformHex offline replay prefers current screen replay selection over sto
   assert.equal(checkNoHangingNodes(coarseReplay.mesh).ok, true);
 });
 
-test("ComformHex offline replay honors Hex regularization for scaled screen selections", () => {
+test("HexRefine offline replay honors Hex regularization for scaled screen selections", () => {
   const baseCommands = [
     {
       kind: "grid.generate",
@@ -970,7 +970,7 @@ test("ComformHex offline replay honors Hex regularization for scaled screen sele
       }
     }
   ];
-  const replay = (regularizeHexSelection) => replayComformHexCommandScript({
+  const replay = (regularizeHexSelection) => replayHexRefineCommandScript({
     commands: [
       ...baseCommands,
       {
@@ -1020,7 +1020,7 @@ test("ComformHex offline replay honors Hex regularization for scaled screen sele
   );
 });
 
-test("ComformHex offline export manifest includes replay selection diagnostics", async () => {
+test("HexRefine offline export manifest includes replay selection diagnostics", async () => {
   const { runOfflineExportJob } = await import("../scripts/offline-export.mjs");
   const script = {
     commands: [
@@ -1078,9 +1078,9 @@ test("ComformHex offline export manifest includes replay selection diagnostics",
   assert.equal(result.manifest.selectionDiagnostics[0].selectionSource, "state.selected-elements");
 });
 
-test("ComformHex offline export defaults to VTK without INP output", async () => {
+test("HexRefine offline export defaults to VTK without INP output", async () => {
   const { runOfflineExportJob } = await import("../scripts/offline-export.mjs");
-  const outputDir = await mkdtemp(join(tmpdir(), "comformhex-offline-test-"));
+  const outputDir = await mkdtemp(join(tmpdir(), "hexrefine-offline-test-"));
   try {
     const result = await runOfflineExportJob({
       commands: [
@@ -1112,7 +1112,7 @@ test("ComformHex offline export defaults to VTK without INP output", async () =>
   }
 });
 
-test("ComformHex shared session selection prep matches the GUI Hex core workflow", () => {
+test("HexRefine shared session selection prep matches the GUI Hex core workflow", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(10, 2, 1));
   const active = buildActiveMeshWithMap(session, {
     mergeNodes: true,
@@ -1144,7 +1144,7 @@ test("ComformHex shared session selection prep matches the GUI Hex core workflow
   assert.equal(checkNoHangingNodes(refined).ok, true);
 });
 
-test("ComformHex shared session selection prep regularizes disconnected Hex regions independently", () => {
+test("HexRefine shared session selection prep regularizes disconnected Hex regions independently", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(12, 6, 6));
   const active = buildActiveMeshWithMap(session, {
     mergeNodes: true,
@@ -1180,7 +1180,7 @@ test("ComformHex shared session selection prep regularizes disconnected Hex regi
   assert.equal(checkNoHangingNodes(refined).ok, true);
 });
 
-test("ComformHex shared session selection prep uses a hollow uvw shell before growing outward", () => {
+test("HexRefine shared session selection prep uses a hollow uvw shell before growing outward", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(7, 7, 7));
   const active = buildActiveMeshWithMap(session, {
     mergeNodes: true,
@@ -1215,7 +1215,7 @@ test("ComformHex shared session selection prep uses a hollow uvw shell before gr
   assert.equal(checkNoHangingNodes(refined).ok, true);
 });
 
-test("ComformHex shared session selection prep accepts a solid 3x3x3 layer and refines only its center", () => {
+test("HexRefine shared session selection prep accepts a solid 3x3x3 layer and refines only its center", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(7, 7, 7));
   const active = buildActiveMeshWithMap(session, {
     mergeNodes: true,
@@ -1240,7 +1240,7 @@ test("ComformHex shared session selection prep accepts a solid 3x3x3 layer and r
   assert.equal(prepared.warnings.length, 0);
 });
 
-test("ComformHex shared session selection prep omits transition support on model boundaries", () => {
+test("HexRefine shared session selection prep omits transition support on model boundaries", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(7, 7, 7));
   const active = buildActiveMeshWithMap(session, {
     mergeNodes: true,
@@ -1278,7 +1278,7 @@ test("ComformHex shared session selection prep omits transition support on model
   assert.equal(checkNoHangingNodes(refined).ok, true);
 });
 
-test("ComformHex shared session selection prep handles folded uvw support blocks from imported VTK", () => {
+test("HexRefine shared session selection prep handles folded uvw support blocks from imported VTK", () => {
   const mesh = parseMeshText(
     readFileSync(join("Test uvw Block", "Test1-ConformHex.vtk"), "utf8"),
     "Test1-ConformHex.vtk"
@@ -1337,7 +1337,7 @@ test("ComformHex shared session selection prep handles folded uvw support blocks
   }
 });
 
-test("ComformHex shared session selection prep keeps uvw domains local after distant refinement", () => {
+test("HexRefine shared session selection prep keeps uvw domains local after distant refinement", () => {
   const mesh = createHexUnitCubeMesh(8, 3, 3);
   const session = createRefinementSession(mesh);
   let active = buildActiveMeshWithMap(session, {

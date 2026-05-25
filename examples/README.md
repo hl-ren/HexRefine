@@ -1,4 +1,4 @@
-# ComformHex Examples
+# HexRefine Examples
 
 Project examples are generated into:
 
@@ -21,6 +21,6 @@ npm run examples:vtk
 The browser workbench is:
 
 ```txt
-browser/comformhex.html
+browser/hexrefine.html
 browser/refinement-gui.html
 ```

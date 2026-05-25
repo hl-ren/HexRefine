@@ -6,7 +6,11 @@ const MB = 1024 * 1024;
 export function offlineMemoryPlan(options = {}) {
   const totalMb = Math.floor(os.totalmem() / MB);
   const freeMb = Math.floor(os.freemem() / MB);
-  const requestedMb = parseMemoryMb(options.requestedMb ?? process.env.COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB);
+  const requestedMb = parseMemoryMb(
+    options.requestedMb
+    ?? process.env.HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB
+    ?? process.env.COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB
+  );
   const reserveMb = memoryReserveMb(totalMb);
   const autoMb = Math.max(2048, Math.floor(Math.min(totalMb * 0.75, totalMb - reserveMb)));
   const maxOldSpaceMb = requestedMb ?? autoMb;
@@ -51,13 +55,13 @@ function parseMemoryMb(value) {
   const text = String(value).trim().toLowerCase();
   const match = text.match(/^(\d+(?:\.\d+)?)(mb|m|gb|g)?$/);
   if (!match) {
-    throw new Error(`invalid COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB value: ${value}`);
+    throw new Error(`invalid HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB value: ${value}`);
   }
   const amount = Number(match[1]);
   const unit = match[2] ?? "mb";
   const mb = unit === "gb" || unit === "g" ? amount * 1024 : amount;
   if (!Number.isFinite(mb) || mb < 512) {
-    throw new Error(`invalid COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB value: ${value}`);
+    throw new Error(`invalid HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB value: ${value}`);
   }
   return Math.floor(mb);
 }

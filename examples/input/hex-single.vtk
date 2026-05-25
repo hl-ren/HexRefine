@@ -1,5 +1,5 @@
 # vtk DataFile Version 3.0
-ComformHex hex template
+HexRefine hex template
 ASCII
 DATASET UNSTRUCTURED_GRID
 POINTS 8 double

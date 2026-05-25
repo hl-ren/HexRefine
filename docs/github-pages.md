@@ -1,6 +1,6 @@
 # GitHub Pages Deployment
 
-ComformHex can be deployed as a static GitHub Pages site. The site contains the
+HexRefine can be deployed as a static GitHub Pages site. The site contains the
 browser workbench, compiled runtime modules, documentation, and generated VTK
 examples. It does not require a backend service.
 
@@ -33,6 +33,12 @@ The deployed URL will usually be:
 
 ```txt
 https://<owner>.github.io/<repo>/
+```
+
+For this repository, the Pages URL is:
+
+```txt
+https://hl-ren.github.io/HexRefine/
 ```
 
 For a user or organization site repository named `<owner>.github.io`, the URL is:
@@ -72,7 +78,7 @@ release/pages/
 It also writes the versioned web bundle:
 
 ```txt
-release/comformhex-<version>/web/
+release/hexrefine-<version>/web/
 ```
 
 The stable path is used by GitHub Actions so the workflow does not need to be

@@ -1,6 +1,6 @@
 # macOS Desktop Test App
 
-ComformHex can be packaged as a portable macOS desktop app for easier local
+HexRefine can be packaged as a portable macOS desktop app for easier local
 testing. The desktop app wraps the same static browser workbench with Electron.
 
 ## Build The macOS Apps
@@ -28,26 +28,26 @@ DESKTOP_MAC_ARCHS=x64 npm run desktop:mac
 The build writes:
 
 ```txt
-release/desktop/ComformHex-darwin-arm64/
-release/desktop/ComformHex-darwin-arm64.zip
-release/desktop/ComformHex-darwin-x64/
-release/desktop/ComformHex-darwin-x64.zip
+release/desktop/HexRefine-darwin-arm64/
+release/desktop/HexRefine-darwin-arm64.zip
+release/desktop/HexRefine-darwin-x64/
+release/desktop/HexRefine-darwin-x64.zip
 ```
 
 ## Run On macOS
 
 1. Choose the zip for the user's Mac:
-   - `ComformHex-darwin-arm64.zip` for Apple Silicon Macs.
-   - `ComformHex-darwin-x64.zip` for Intel Macs.
+   - `HexRefine-darwin-arm64.zip` for Apple Silicon Macs.
+   - `HexRefine-darwin-x64.zip` for Intel Macs.
 2. Extract the zip file.
-3. Open `ComformHex.app`.
+3. Open `HexRefine.app`.
 
 No Node.js, Python, or server setup is required on the user's Mac.
 
 ## Gatekeeper Notice
 
 The app is currently unsigned. macOS Gatekeeper may block the first launch. For
-internal testing, right-click `ComformHex.app`, choose "Open", and confirm that
+internal testing, right-click `HexRefine.app`, choose "Open", and confirm that
 you trust the build source.
 
 ## Local Desktop Preview

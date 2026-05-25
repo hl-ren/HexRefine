@@ -33,7 +33,7 @@ await execFileAsync(
   join(root, "node_modules", ".bin", "electron-packager"),
   [
     "release/desktop-app",
-    "ComformHex",
+    "HexRefine",
     "--platform=win32",
     "--arch=x64",
     "--out=release/desktop",

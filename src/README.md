@@ -1,13 +1,13 @@
-# ComformHex Source
+# HexRefine Source
 
-This folder is the source boundary for ComformHex.
+This folder is the source boundary for HexRefine.
 
-The ComformHex mesh kernel and refinement implementation are now project-local.
+The HexRefine mesh kernel and refinement implementation are now project-local.
 This project tsconfig only includes `src/**/*.ts`.
 
 Project-facing module map:
 
-- `index.ts`: full ComformHex public entry
+- `index.ts`: full HexRefine public entry
 - `mesh-selection.ts`: mesh-only selection, first migrated implementation
 - `types.ts`, `mesh.ts`, `topology.ts`, `vector.ts`: mesh kernel
 - `distance.ts`: signed distance selection utilities

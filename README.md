@@ -1,6 +1,6 @@
-# ComformHex
+# HexRefine
 
-ComformHex is a standalone TypeScript project for conforming Q1/Hex local
+HexRefine is a standalone TypeScript project for conforming Q1/Hex local
 refinement. It provides a small mesh kernel, local refinement templates,
 automatic transition layers, no-hanging-node validation, hierarchical refinement
 sessions, VTK/INP export, command replay, and a browser workbench.
@@ -8,11 +8,17 @@ sessions, VTK/INP export, command replay, and a browser workbench.
 Use this project when the goal is to refine structured quadrilateral or
 hexahedral meshes locally while keeping the exported mesh conforming.
 
+Online workbench:
+
+```txt
+https://hl-ren.github.io/HexRefine/
+```
+
 ## Status
 
-This working tree is the private/custom performance edition. The current focus
-is a practical, inspectable mesh workbench that is easy to customize for the
-author's own workflows and selected custom projects:
+This repository is the public HexRefine source and browser workbench. The
+current focus is a practical, inspectable mesh workflow that is easy to
+customize for research, engineering experiments, and selected project work:
 
 - Browser GUI for workflow design, coarse-model inspection, selection, sets,
   materials, and export setup.
@@ -27,18 +33,13 @@ Large-mesh workflows are still an active engineering area. The GUI can guide
 large cases, but for production-size exports the recommended path is GUI first,
 then offline replay.
 
-The recommended public strategy is to release a simpler community edition from
-an earlier, less optimized baseline. That version can stay free/open source,
-while this performance edition remains available for personal use and custom
-engineering work. See [Edition Strategy](docs/edition-strategy.md).
-
 ## Author And License
 
-ComformHex is authored by Huilong Ren, Tongji University
+HexRefine is authored by Huilong Ren, Tongji University
 <hlren@tongji.edu.cn>.
 
-This working tree is marked private and is not intended for accidental npm
-publication. A separate community edition can carry an open-source license.
+This repository is public on GitHub. The npm package is still marked private in
+`package.json` to avoid accidental registry publication.
 
 ## Documentation
 
@@ -55,7 +56,7 @@ publication. A separate community edition can carry an open-source license.
 ## Project Layout
 
 ```txt
-comformhex/
+hexrefine/
   src/       source code
   dist/      generated runtime build output
   examples/ examples, browser workbench, and generated meshes
@@ -140,7 +141,7 @@ console.log(checkNoHangingNodes(result.mesh).ok);
 Browser workbench:
 
 ```txt
-examples/browser/comformhex.html
+examples/browser/hexrefine.html
 ```
 
 Offline replay for larger cases:
@@ -154,7 +155,7 @@ node scripts/run-offline-auto.mjs workflow.json --nx 128 --ny 64 --nz 64 --selec
 before launching the dense replay. Override it only when needed:
 
 ```bash
-COMFORMHEX_OFFLINE_MAX_OLD_SPACE_MB=48g node scripts/run-offline-auto.mjs workflow.json --nx 256 --ny 128 --nz 128 --selection replay --vtk output/refined.vtk
+HEXREFINE_OFFLINE_MAX_OLD_SPACE_MB=48g node scripts/run-offline-auto.mjs workflow.json --nx 256 --ny 128 --nz 128 --selection replay --vtk output/refined.vtk
 ```
 
 This mode is meant for a lighter workflow:

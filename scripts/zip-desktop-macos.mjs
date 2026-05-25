@@ -8,13 +8,13 @@ const desktopRoot = join(root, "release", "desktop");
 const archs = parseArchs(process.env.DESKTOP_MAC_ARCHS ?? "arm64,x64");
 
 for (const arch of archs) {
-  const appDir = join(desktopRoot, `ComformHex-darwin-${arch}`);
-  const appBundle = join(appDir, "ComformHex.app");
-  const zipPath = join(desktopRoot, `ComformHex-darwin-${arch}.zip`);
+  const appDir = join(desktopRoot, `HexRefine-darwin-${arch}`);
+  const appBundle = join(appDir, "HexRefine.app");
+  const zipPath = join(desktopRoot, `HexRefine-darwin-${arch}.zip`);
 
   await access(appBundle);
   await rm(zipPath, { force: true });
-  await run("ditto", ["-c", "-k", "--sequesterRsrc", "--keepParent", "ComformHex.app", zipPath], appDir);
+  await run("ditto", ["-c", "-k", "--sequesterRsrc", "--keepParent", "HexRefine.app", zipPath], appDir);
 
   console.log(`Prepared macOS ${arch} desktop app: ${appBundle}`);
   console.log(`Prepared macOS ${arch} desktop zip: ${zipPath}`);

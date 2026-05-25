@@ -1,6 +1,6 @@
-# ComformHex Positioning
+# HexRefine Positioning
 
-ComformHex is not a general-purpose professional CAE preprocessor. It is a
+HexRefine is not a general-purpose professional CAE preprocessor. It is a
 focused conforming local-refinement kernel with a browser workbench.
 
 Professional preprocessors usually cover the whole preparation workflow:
@@ -13,7 +13,7 @@ Professional preprocessors usually cover the whole preparation workflow:
 - Solver-specific decks for multiple solvers.
 - Batch automation, model databases, and large-team workflows.
 
-ComformHex covers a much narrower slice:
+HexRefine covers a much narrower slice:
 
 - Structured Q1/Hex mesh generation.
 - Local Q1/Hex refinement templates.
@@ -27,7 +27,7 @@ ComformHex covers a much narrower slice:
 
 ## Rough Coverage
 
-For a full professional preprocessor, ComformHex is roughly a small single-digit
+For a full professional preprocessor, HexRefine is roughly a small single-digit
 to low-teens percentage of the total feature surface. A fair estimate is:
 
 ```txt
@@ -37,7 +37,7 @@ Research/prototype refinement kernel: 70% - 90%
 ```
 
 The exact number depends on the workflow. If the task is "prepare an industrial
-solver model from CAD," ComformHex is only a small component. If the task is
+solver model from CAD," HexRefine is only a small component. If the task is
 "take a structured quad/hex mesh, refine local regions conformingly, preserve
 sets, and export the result," it covers a large part of that specialized path.
 
@@ -56,7 +56,7 @@ distinctive part is the combination of these properties:
 - The core is small enough to test and reason about directly.
 
 Many general preprocessors can do far more overall, but their local Hex
-refinement behavior is often hidden inside a large modeling system. ComformHex
+refinement behavior is often hidden inside a large modeling system. HexRefine
 keeps that behavior exposed as a programmable kernel.
 
 ## Strengths
@@ -69,7 +69,7 @@ keeps that behavior exposed as a programmable kernel.
 
 ## Current Limits
 
-ComformHex currently does not provide:
+HexRefine currently does not provide:
 
 - CAD import or geometry healing.
 - Unstructured tetrahedral, prism, pyramid, or mixed meshing.
@@ -83,7 +83,7 @@ ComformHex currently does not provide:
 
 ## Best Mental Model
 
-Think of ComformHex as a specialized mesh refinement engine plus workbench:
+Think of HexRefine as a specialized mesh refinement engine plus workbench:
 
 ```txt
 Structured mesh in

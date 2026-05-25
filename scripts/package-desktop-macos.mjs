@@ -29,13 +29,13 @@ for (const arch of archs) {
 
   await run(join(root, "node_modules", ".bin", "electron-packager"), [
     "release/desktop-app",
-    "ComformHex",
+    "HexRefine",
     "--platform=darwin",
     `--arch=${arch}`,
     "--out=release/desktop",
     "--overwrite",
     "--asar",
-    "--app-bundle-id=org.comformhex.app",
+    "--app-bundle-id=org.hexrefine.app",
     `--electron-version=${electronVersion}`,
     `--electron-zip-dir=${zipDir}`
   ]);

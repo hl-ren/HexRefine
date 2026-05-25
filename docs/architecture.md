@@ -1,6 +1,6 @@
-# ComformHex Architecture
+# HexRefine Architecture
 
-ComformHex is organized as a small TypeScript mesh-refinement library plus a
+HexRefine is organized as a small TypeScript mesh-refinement library plus a
 browser workbench. The runtime entry is `src/index.ts`, which re-exports the
 kernel, refinement, session, replay, and export APIs.
 
@@ -119,7 +119,7 @@ The GUI is intentionally a thin client around the same runtime modules:
 - `refinement-worker.js` imports `../../dist/index.js` and handles heavier
   conformance/export work off the UI thread.
 - The GUI records command scripts that can be replayed through
-  `replayComformHexCommandScript`.
+  `replayHexRefineCommandScript`.
 
 The browser path does not use any project-external source code.
 

@@ -47,7 +47,7 @@ const server = http.createServer((request, response) => {
 });
 
 server.listen(8080, "127.0.0.1", () => {
-  console.log(`ComformHex pages server ready at http://127.0.0.1:8080`);
+  console.log(`HexRefine pages server ready at http://127.0.0.1:8080`);
 });
 
 async function handleRequest(request, response) {
@@ -57,10 +57,10 @@ async function handleRequest(request, response) {
       "content-type": "text/javascript; charset=utf-8",
       "cache-control": "no-store"
     });
-    response.end(`window.COMFORMHEX_RUNTIME = ${JSON.stringify({
+    response.end(`window.HEXREFINE_RUNTIME = ${JSON.stringify({
       appMode: "internal",
       guiElementLimit: null
-    }, null, 2)};\n`);
+    }, null, 2)};\nwindow.COMFORMHEX_RUNTIME = window.HEXREFINE_RUNTIME;\n`);
     return;
   }
   if (request.method === "POST" && requestUrl.pathname === "/api/offline-export") {
@@ -79,12 +79,12 @@ async function handleOfflineExportRequest(request, response) {
   const script = body?.script;
   const scaleFactor = body?.scaleFactor;
   const jobId = randomUUID();
-  const outputDir = join(tmpdir(), "comformhex-offline-jobs", jobId);
+  const outputDir = join(tmpdir(), "hexrefine-offline-jobs", jobId);
   const job = await runOfflineExportJob(script, {
     scaleFactor,
     exportKind: body?.exportKind,
     outputDir,
-    baseName: "comformhex-offline",
+    baseName: "hexrefine-offline",
     includeInp: body?.includeInp === true
   });
   offlineJobs.set(jobId, {
@@ -99,18 +99,18 @@ async function handleOfflineExportRequest(request, response) {
     summary: job.manifest,
     files: {
       vtk: {
-        name: "comformhex-offline.vtk",
-        url: `/api/offline-export/${jobId}/comformhex-offline.vtk`
+        name: "hexrefine-offline.vtk",
+        url: `/api/offline-export/${jobId}/hexrefine-offline.vtk`
       },
       ...(job.inpPath ? {
         inp: {
-          name: "comformhex-offline.inp",
-          url: `/api/offline-export/${jobId}/comformhex-offline.inp`
+          name: "hexrefine-offline.inp",
+          url: `/api/offline-export/${jobId}/hexrefine-offline.inp`
         }
       } : {}),
       job: {
-        name: "comformhex-offline-job.json",
-        url: `/api/offline-export/${jobId}/comformhex-offline-job.json`
+        name: "hexrefine-offline-job.json",
+        url: `/api/offline-export/${jobId}/hexrefine-offline-job.json`
       }
     }
   });
@@ -128,11 +128,11 @@ function handleOfflineDownloadRequest(requestUrl, response) {
     return;
   }
 
-  const filePath = fileName === "comformhex-offline.vtk"
+  const filePath = fileName === "hexrefine-offline.vtk"
     ? job.vtkPath
-    : fileName === "comformhex-offline.inp"
+    : fileName === "hexrefine-offline.inp"
       ? job.inpPath
-      : fileName === "comformhex-offline-job.json"
+      : fileName === "hexrefine-offline-job.json"
         ? job.jobPath
         : undefined;
   if (!filePath || !existsSync(filePath)) {

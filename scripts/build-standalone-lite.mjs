@@ -5,12 +5,14 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const guiPath = join(root, "examples", "browser", "refinement-gui.html");
 const distRoot = join(root, "dist");
-const outputPath = join(root, "examples", "browser", "comformhex-standalone.html");
+const outputPath = join(root, "examples", "browser", "hexrefine-standalone.html");
+const legacyOutputPath = join(root, "examples", "browser", "comformhex-standalone.html");
 
 const guiHtml = await readFile(guiPath, "utf8");
 const importMap = await buildImportMap(distRoot);
 const transformed = buildStandaloneHtml(guiHtml, importMap);
 await writeFile(outputPath, transformed, "utf8");
+await writeFile(legacyOutputPath, redirectHtml("hexrefine-standalone.html", "HexRefine Standalone"), "utf8");
 console.log(`Prepared standalone file: ${outputPath}`);
 
 async function buildImportMap(distDir) {
@@ -32,7 +34,7 @@ async function buildImportMap(distDir) {
 }
 
 function buildStandaloneHtml(html, importMap) {
-  const runtimeScript = `<script>window.COMFORMHEX_RUNTIME={appMode:"internal",guiElementLimit:null};window.COMFORMHEX_STANDALONE=true;</script>`;
+  const runtimeScript = `<script>window.HEXREFINE_RUNTIME={appMode:"internal",guiElementLimit:null};window.COMFORMHEX_RUNTIME=window.HEXREFINE_RUNTIME;window.HEXREFINE_STANDALONE=true;window.COMFORMHEX_STANDALONE=true;</script>`;
   const importMapScript = `<script type="importmap">${JSON.stringify({ imports: importMap }, null, 2)}</script>`;
   const importBlock = `import {
         activeBuildCellIdByElementId,
@@ -53,10 +55,10 @@ function buildStandaloneHtml(html, importMap) {
         previewRefinementByElementIds,
         refineSessionPatch,
         regularizeHexSelection,
-        replayComformHexCommandScript,
+        replayHexRefineCommandScript,
         redoRefinementSession,
         undoRefinementSession
-      } from "comformhex/index.js";`;
+      } from "hexrefine/index.js";`;
 
   const workerReplacement = `async function runRefinementWorker(request) {
         workerStatus = "inline";
@@ -96,7 +98,7 @@ function buildStandaloneHtml(html, importMap) {
               ok: true,
               kind: request.kind,
               parts: linesToBlobParts(iterateLegacyVtkLines(prepared.mesh, {
-                title: "ComformHex standalone mesh",
+                title: "HexRefine standalone mesh",
                 cellScalars: scalars
               })),
               missing: missingSetSummary(prepared.sets),
@@ -118,7 +120,7 @@ function buildStandaloneHtml(html, importMap) {
               ok: true,
               kind: request.kind,
               parts: linesToBlobParts(iteratePreparedInpLines(prepared, {
-                title: "ComformHex standalone mesh",
+                title: "HexRefine standalone mesh",
                 elementKind: request.exportKind ?? request.elementKind,
                 materials: request.materials ?? []
               })),
@@ -206,12 +208,12 @@ function buildStandaloneHtml(html, importMap) {
     /async function exportOfflineJob\(\) \{[\s\S]*?\r?\n      \}\r?\n\r?\n      function reportMissingExportSets/,
     `${offlineReplacement}\n\n      function reportMissingExportSets`
   );
-  output = output.replace('const restoreAutosaveButton = document.querySelector("#restore-autosave");', 'const restoreAutosaveButton = document.querySelector("#restore-autosave");\n      const standaloneMode = Boolean(globalThis.COMFORMHEX_STANDALONE);');
+  output = output.replace('const restoreAutosaveButton = document.querySelector("#restore-autosave");', 'const restoreAutosaveButton = document.querySelector("#restore-autosave");\n      const standaloneMode = Boolean(globalThis.HEXREFINE_STANDALONE || globalThis.COMFORMHEX_STANDALONE);');
   output = output.replace(
     '      syncKindControls();\n      syncExportKindOptions();\n      setMiddleBox();',
     `      if (standaloneMode) {\n        exportOfflineButton.disabled = true;\n        offlineScaleEl.disabled = true;\n        offlineReleaseMemoryEl.disabled = true;\n        restoreAutosaveButton.disabled = true;\n        statWorkerEl.textContent = "inline";\n      }\n\n      syncKindControls();\n      syncExportKindOptions();\n      setMiddleBox();`
   );
-  output = output.replace(/<title>ComformHex[^<]*<\/title>/, '<title>ComformHex Standalone</title>');
+  output = output.replace(/<title>ComformHex[^<]*<\/title>|<title>HexRefine[^<]*<\/title>/, '<title>HexRefine Standalone</title>');
   return output;
 }
 
@@ -220,7 +222,7 @@ function toDataUrl(source) {
 }
 
 function standaloneSpecifier(fileName) {
-  return `comformhex/${fileName}`;
+  return `hexrefine/${fileName}`;
 }
 
 function rewriteModuleSpecifiers(source) {
@@ -229,4 +231,19 @@ function rewriteModuleSpecifiers(source) {
     .replaceAll(/from '\.\/([^']+\.js)'/g, (_match, fileName) => `from "${standaloneSpecifier(fileName)}"`)
     .replaceAll(/import\("\.\/([^"]+\.js)"\)/g, (_match, fileName) => `import("${standaloneSpecifier(fileName)}")`)
     .replaceAll(/import\('\.\/([^']+\.js)'\)/g, (_match, fileName) => `import("${standaloneSpecifier(fileName)}")`);
+}
+
+function redirectHtml(target, title) {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0; url=./${target}">
+    <title>${title}</title>
+  </head>
+  <body>
+    <p><a href="./${target}">Open ${title}</a></p>
+  </body>
+</html>
+`;
 }

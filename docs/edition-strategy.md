@@ -1,6 +1,6 @@
 # Edition Strategy
 
-ComformHex can reasonably use two editions:
+HexRefine can reasonably use two editions:
 
 ## Community Edition
 
@@ -23,7 +23,7 @@ Recommended baseline:
 Suggested positioning:
 
 ```txt
-ComformHex Community Edition is a free TypeScript/browser workbench for
+HexRefine Community Edition is a free TypeScript/browser workbench for
 conforming Q1/H1 local mesh refinement on small and medium structured blocks.
 ```
 
