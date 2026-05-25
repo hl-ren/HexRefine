@@ -1,9 +1,7 @@
-HexRefine Private / Custom Performance Edition
+HexRefine
 
-Copyright (c) 2026 Huilong Ren. All rights reserved.
+Copyright (c) 2026 Huilong Ren.
 
-This working tree is the author's private/custom performance edition. It is not
-intended for public redistribution or accidental npm publication.
+当前工作树是私有/定制性能版；后续可从早期基线单独发布免费开源社区版。
 
-A separate HexRefine Community Edition may be released from an earlier, simpler
-baseline under an open-source license.
+软件按“现状”提供，不附带任何明示或暗示担保。

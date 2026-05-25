@@ -16,9 +16,9 @@ https://hl-ren.github.io/HexRefine/
 
 ## Status
 
-This repository is the public HexRefine source and browser workbench. The
-current focus is a practical, inspectable mesh workflow that is easy to
-customize for research, engineering experiments, and selected project work:
+This working tree is the private/custom performance edition. The current focus
+is a practical, inspectable mesh workflow that is easy to customize for
+research, engineering experiments, and selected project work:
 
 - Browser GUI for workflow design, coarse-model inspection, selection, sets,
   materials, and export setup.
@@ -33,13 +33,13 @@ Large-mesh workflows are still an active engineering area. The GUI can guide
 large cases, but for production-size exports the recommended path is GUI first,
 then offline replay.
 
-## Author And License
+## Copyright And Version
 
-HexRefine is authored by Huilong Ren, Tongji University
-<hlren@tongji.edu.cn>.
+Copyright (c) 2026 Huilong Ren.
 
-This repository is public on GitHub. The npm package is still marked private in
-`package.json` to avoid accidental registry publication.
+当前工作树是私有/定制性能版；后续可从早期基线单独发布免费开源社区版。
+
+软件按“现状”提供，不附带任何明示或暗示担保。
 
 ## Documentation
 
