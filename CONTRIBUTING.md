@@ -1,10 +1,9 @@
-# Contributing To HexRefine Community Edition
+# Contributing To HexRefine
 
-The current working tree is the private/custom performance edition. This file
-is intended for the future public community edition, which should be cut from a
-simpler free baseline.
+The current working tree is the regular HexRefine edition. A separate free
+open-source community edition may be cut later from an earlier baseline.
 
-For that community edition, contributions are welcome, especially around
+Contributions are welcome, especially around
 correctness tests, GUI usability, import/export compatibility, and
 documentation.
 

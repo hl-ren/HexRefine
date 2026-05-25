@@ -16,9 +16,9 @@ https://hl-ren.github.io/HexRefine/
 
 ## Status
 
-This working tree is the private/custom performance edition. The current focus
-is a practical, inspectable mesh workflow that is easy to customize for
-research, engineering experiments, and selected project work:
+This working tree is the regular HexRefine edition. The current focus is a
+practical, inspectable mesh workflow that is easy to customize for research,
+engineering experiments, and selected project work:
 
 - Browser GUI for workflow design, coarse-model inspection, selection, sets,
   materials, and export setup.
@@ -37,7 +37,7 @@ then offline replay.
 
 Copyright (c) 2026 Huilong Ren.
 
-当前工作树是私有/定制性能版；后续可从早期基线单独发布免费开源社区版。
+当前版本是普通版；后续可从早期基线单独发布免费开源社区版。
 
 软件按“现状”提供，不附带任何明示或暗示担保。
 
