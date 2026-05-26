@@ -14,6 +14,12 @@ Online workbench:
 https://hl-ren.github.io/HexRefine/
 ```
 
+## Refinement Examples
+
+| Q1 local refinement | H1 local refinement |
+| --- | --- |
+| <img src="./Q1-refine3.png" alt="Q1 local refinement example" width="420"> | <img src="./H1-refine2.png" alt="H1 local refinement example" width="420"> |
+
 ## Status
 
 The current focus is a practical, inspectable mesh workflow that is easy to
