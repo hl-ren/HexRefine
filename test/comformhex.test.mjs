@@ -243,6 +243,43 @@ test("HexRefine project auto-detects Abaqus INP, LS-DYNA K, and VTU meshes from 
   assert.deepEqual(quadVtu.elements, [[1, 2, 3, 4]]);
 });
 
+test("HexRefine project rejects non-quad and non-hex VTK and Abaqus INP imports", () => {
+  const tetraInp = [
+    "*Heading",
+    "unsupported tetra",
+    "*Node",
+    "1, 0, 0, 0",
+    "2, 1, 0, 0",
+    "3, 0, 1, 0",
+    "4, 0, 0, 1",
+    "*Element, type=C3D4",
+    "1, 1, 2, 3, 4"
+  ].join("\n");
+  const triangleVtk = [
+    "# vtk DataFile Version 3.0",
+    "triangle",
+    "ASCII",
+    "DATASET UNSTRUCTURED_GRID",
+    "POINTS 3 double",
+    "0 0 0",
+    "1 0 0",
+    "0 1 0",
+    "CELLS 1 4",
+    "3 0 1 2",
+    "CELL_TYPES 1",
+    "5"
+  ].join("\n");
+
+  assert.throws(
+    () => parseMeshText(tetraInp, "tetra.inp"),
+    /Abaqus import only supports 4-node quad\/shell and 8-node hex\/solid elements, got element type C3D4/
+  );
+  assert.throws(
+    () => parseMeshText(triangleVtk, "triangle.vtk"),
+    /VTK import only supports CELL_TYPES 9 \(QUAD\) and 12 \(HEXAHEDRON\), got 5/
+  );
+});
+
 test("HexRefine project streams legacy VTK lines without changing file content", () => {
   const mesh = {
     kind: "H1",

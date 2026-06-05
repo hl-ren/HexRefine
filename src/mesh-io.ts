@@ -269,7 +269,11 @@ export function parseAbaqusInpMesh(text: string): Mesh {
       }
       if (/^\*ELEMENT\b/i.test(line)) {
         section = "element";
-        expectedNodeCount = inferAbaqusElementNodeCount(line);
+        const typeSpec = readAbaqusElementTypeSpec(line);
+        if (typeSpec.unsupportedType) {
+          throw new Error(`Abaqus import only supports 4-node quad/shell and 8-node hex/solid elements, got element type ${typeSpec.unsupportedType}`);
+        }
+        expectedNodeCount = typeSpec.expectedNodeCount;
         continue;
       }
       section = "none";
@@ -598,19 +602,25 @@ function normalizeImportText(text: string): string {
   return text.replace(/^\uFEFF/, "").replace(/\r/g, "");
 }
 
-function inferAbaqusElementNodeCount(line: string): number | undefined {
+function readAbaqusElementTypeSpec(line: string): {
+  expectedNodeCount: number | undefined;
+  unsupportedType?: string;
+} {
   const typeMatch = line.match(/\btype\s*=\s*([^,\s]+)/i);
   const type = typeMatch?.[1]?.toUpperCase();
   if (!type) {
-    return undefined;
+    return { expectedNodeCount: undefined };
   }
   if (/^(C3D8|DC3D8|AC3D8|SC8)/.test(type)) {
-    return 8;
+    return { expectedNodeCount: 8 };
   }
   if (/^(CPS4|CPE4|CAX4|S4|M3D4|R3D4|DS4|COH2D4)/.test(type)) {
-    return 4;
+    return { expectedNodeCount: 4 };
   }
-  return undefined;
+  return {
+    expectedNodeCount: undefined,
+    unsupportedType: type
+  };
 }
 
 function inferConnectivityNodeCountFromFieldCount(fieldCount: number, label: string): number {
