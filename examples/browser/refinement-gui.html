@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HexRefine 0.1.0</title>
+    <title>HexRefine 0.2</title>
     <style>
       :root {
         --bg: #0c0f12;
@@ -137,8 +137,6 @@
       input,
       select,
       textarea,
-      pre,
-      #report,
       .help-dialog {
         user-select: text;
       }
@@ -151,10 +149,8 @@
       }
 
       .title-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 8px;
+        display: grid;
+        gap: 4px;
       }
 
       .title-block {
@@ -176,16 +172,43 @@
       }
 
       .title-tools {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: center;
-        flex: 0 0 auto;
-        gap: 6px;
+        width: 100%;
+        gap: 4px;
       }
 
-      .theme-select {
-        width: 62px;
-        min-height: 30px;
-        padding: 0 4px;
+      .title-tools .theme-select,
+      .title-tools .text-button,
+      .canvas-bg-picker {
+        width: 100%;
+        height: 22px;
+        min-width: 0;
+        min-height: 22px;
+        padding: 0 5px;
+      }
+
+      .canvas-bg-picker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid var(--line);
+        background: var(--input-bg);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 11px;
+        line-height: 1.15;
+      }
+
+      .canvas-bg-picker input {
+        width: 22px;
+        height: 16px;
+        min-height: 16px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
       }
 
       h2 {
@@ -202,51 +225,79 @@
         display: none;
       }
 
-      .stats-band {
+      .kind-toggle {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1px;
-        border: 1px solid var(--line);
-        background: var(--line);
-      }
-
-      .stats-band div {
-        display: grid;
-        gap: 2px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
         min-width: 0;
-        padding: 6px;
-        background: var(--panel-2);
       }
 
-      .stats-band span {
+      .kind-toggle button {
+        min-width: 0;
+        font-weight: 680;
+        line-height: 1.1;
+        white-space: normal;
+      }
+
+      .clear-action {
+        border-color: color-mix(in srgb, var(--warn) 78%, var(--line) 22%);
+        background: color-mix(in srgb, var(--warn) 13%, var(--input-bg) 87%);
+        color: color-mix(in srgb, var(--warn) 82%, var(--text) 18%);
+        font-weight: 720;
+      }
+
+      .viewport-clear-hint {
+        position: absolute;
+        left: 12px;
+        bottom: 50px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 7px;
+        border: 1px solid var(--line);
+        background: var(--status-bg);
         color: var(--muted);
         font-size: 10px;
-        line-height: 1.1;
+        line-height: 1.25;
+        pointer-events: none;
+        z-index: 5;
+        backdrop-filter: blur(10px);
       }
 
-      .stats-band strong {
-        overflow: hidden;
-        color: var(--text);
-        font-size: 12px;
-        font-weight: 680;
-        line-height: 1.15;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      .keycap {
+        display: inline-grid;
+        place-items: center;
+        min-width: 18px;
+        height: 18px;
+        border: 1px solid color-mix(in srgb, var(--warn) 78%, var(--line) 22%);
+        background: color-mix(in srgb, var(--warn) 18%, var(--input-bg) 82%);
+        color: color-mix(in srgb, var(--warn) 84%, var(--text) 16%);
+        font: inherit;
+        font-size: 10px;
+        font-weight: 760;
       }
 
       button,
       input,
       select {
-        min-height: 27px;
+        min-height: 20px;
         border: 1px solid var(--line);
         background: var(--input-bg);
         color: var(--text);
         font: inherit;
-        font-size: 12px;
+        font-size: 11px;
+        line-height: 1.15;
       }
 
       button {
+        min-height: 22px;
+        padding: 0 6px;
         cursor: pointer;
+      }
+
+      input,
+      select {
+        height: 20px;
       }
 
       button[aria-pressed="true"] {
@@ -263,7 +314,7 @@
 
       input {
         width: 100%;
-        padding: 0 6px;
+        padding: 0 4px;
       }
 
       label {
@@ -369,6 +420,19 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 6px;
+      }
+
+      .selection-target-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .generate-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        align-items: end;
       }
 
       .actions {
@@ -600,12 +664,13 @@
         button,
         input,
         select {
-          min-height: 24px;
+          min-height: 18px;
         }
 
         .controls,
         .grid-2,
         .grid-3,
+        .generate-row,
         .actions {
           gap: 5px;
         }
@@ -650,54 +715,41 @@
           <h2>Report</h2>
           <pre id="report"></pre>
         </section>
+        <div class="viewport-clear-hint"><kbd class="keycap">C</kbd><span>to Clear select</span></div>
         <div id="status" class="status">Drag to rotate. Use B for box select, O for circle select, P to pan.</div>
       </section>
       <aside>
         <div class="title-row">
           <div class="title-block">
       <h1>HexRefine</h1>
-            <div class="title-meta">Version 0.1.0</div>
+            <div class="title-meta">Version 0.2</div>
           </div>
           <div class="title-tools">
             <select id="theme-mode" class="theme-select" aria-label="theme mode">
               <option value="light" selected>Light</option>
               <option value="dark">Dark</option>
             </select>
+            <label class="canvas-bg-picker" title="Canvas background">
+              <span>BG</span>
+              <input id="canvas-bg-color" type="color" value="#0d1319" aria-label="canvas background color">
+            </label>
             <button id="help-open" class="text-button" type="button">Help</button>
           </div>
         </div>
-      <section class="stats-band" aria-label="HexRefine stats">
-          <div><span>Kind</span><strong id="stat-kind">H1</strong></div>
-          <div><span>Cells</span><strong id="stat-elements">0</strong></div>
-          <div><span>Nodes</span><strong id="stat-nodes">0</strong></div>
-          <div><span>Levels</span><strong id="stat-levels">0</strong></div>
-          <div><span>Transitions</span><strong id="stat-transitions">0</strong></div>
-          <div><span>Worker</span><strong id="stat-worker">idle</strong></div>
-        </section>
         <section>
           <h2>Grid</h2>
           <div class="controls">
-            <label class="inline-label">
-              <span>Element Type</span>
-              <select id="kind">
+            <div class="kind-toggle" role="group" aria-label="Element Type">
+              <button id="kind-h1" type="button" aria-pressed="true">3D H1 (8 Nodes)</button>
+              <button id="kind-q1" type="button" aria-pressed="false">2D Q1 (4 Nodes)</button>
+              <select id="kind" hidden aria-hidden="true" tabindex="-1">
                 <option value="H1" selected>Hex H1</option>
                 <option value="Q1">Quad Q1</option>
               </select>
-            </label>
-            <div class="compact-grid-3">
-              <label class="inline-label">
-                <span>nx</span>
-                <input id="nx" type="number" min="1" max="160" step="1" value="10">
-              </label>
-              <label class="inline-label">
-                <span>ny</span>
-                <input id="ny" type="number" min="1" max="160" step="1" value="2">
-              </label>
-              <label class="inline-label">
-                <span>nz</span>
-                <input id="nz" type="number" min="1" max="160" step="1" value="1">
-              </label>
             </div>
+            <input id="nx" type="number" min="1" max="160" step="1" value="10" hidden aria-hidden="true" tabindex="-1">
+            <input id="ny" type="number" min="1" max="160" step="1" value="2" hidden aria-hidden="true" tabindex="-1">
+            <input id="nz" type="number" min="1" max="160" step="1" value="1" hidden aria-hidden="true" tabindex="-1">
             <div class="grid-3">
               <label>
                 x0
@@ -724,14 +776,11 @@
                 <input id="model-z-max" type="number" step="0.01" value="1">
               </label>
             </div>
-            <div class="grid-2">
+            <div class="generate-row">
               <label>
-                target dx
+                dx
                 <input id="model-dx" type="number" min="0.000001" step="0.01" value="1">
               </label>
-              <button id="grid-from-dx" type="button">Use dx</button>
-            </div>
-            <div class="grid-2">
               <button id="generate" class="primary-action" type="button">Generate</button>
               <button id="import-mesh" class="primary-action" type="button">Import Mesh</button>
         <input id="mesh-file" class="wide" type="file" accept="application/json,.json,.vtk,.vtu,.inp,.k,.key,text/plain" hidden>
@@ -743,7 +792,7 @@
           <h2>Selection</h2>
           <div class="controls">
             <div class="actions">
-              <button id="clear-selection" type="button">Clear</button>
+              <button id="clear-selection" class="clear-action" type="button">Clear</button>
               <button id="select-all" type="button">All</button>
               <button id="invert-selection" type="button">Invert</button>
             </div>
@@ -784,19 +833,12 @@
               <button id="middle-box" type="button">Middle</button>
               <button id="recursive-focus" class="primary-action" type="button" aria-pressed="false">Focus</button>
             </div>
-            <div class="compact-grid-3">
+            <div class="selection-target-row">
               <label class="inline-label">
                 <span>Target</span>
                 <select id="selection-target">
                   <option value="cells" selected>Cells</option>
                   <option value="nodes">Nodes</option>
-                </select>
-              </label>
-              <label class="inline-label">
-                <span>Box mode</span>
-                <select id="box-mode">
-                  <option value="through" selected>Through</option>
-                  <option value="surface">Surface</option>
                 </select>
               </label>
               <label class="inline-label">
@@ -807,6 +849,13 @@
                 </select>
               </label>
             </div>
+            <label class="inline-label">
+              <span>Box mode</span>
+              <select id="box-mode">
+                <option value="through" selected>Through</option>
+                <option value="surface">Surface</option>
+              </select>
+            </label>
             <div class="grid-3">
               <label>
                 Axis
@@ -849,6 +898,85 @@
           </div>
         </section>
 
+        <section id="q1-tools-section">
+          <h2>2D Tools</h2>
+          <div class="controls">
+            <div class="grid-3">
+              <label>
+                BL h
+                <input id="bl-height" type="number" min="0.000001" step="0.01" value="0.2">
+              </label>
+              <label>
+                BL n
+                <input id="bl-increments" type="number" min="1" max="80" step="1" value="3">
+              </label>
+              <label>
+                BL ratio
+                <input id="bl-growth-ratio" type="number" min="0.000001" step="0.05" value="1">
+              </label>
+              <label>
+                BL arrange
+                <input id="bl-node-arrangement" type="number" min="0.000001" step="0.05" value="1">
+              </label>
+              <label>
+                BL scale
+                <select id="bl-scale-mode">
+                  <option value="none" selected>Grow</option>
+                  <option value="fit-bounds">Fit box</option>
+                  <option value="preserve-area">Same area</option>
+                </select>
+              </label>
+              <button id="preview-boundary-layer" type="button">Preview Boundary Layer</button>
+              <button id="grow-boundary-layer" class="primary-action wide" type="button">Grow Boundary Layer</button>
+            </div>
+            <div class="grid-3">
+              <label>
+                Square ratio
+                <input id="tpl-inner-square" type="number" min="0.01" max="0.95" step="0.01" value="0.28">
+              </label>
+              <label>
+                Inner ratio
+                <input id="tpl-inner-circle" type="number" min="0.01" max="0.95" step="0.01" value="0.45">
+              </label>
+              <label>
+                Outer ratio
+                <input id="tpl-outer-circle" type="number" min="0.01" max="0.95" step="0.01" value="0.55">
+              </label>
+              <label>
+                Inner abs
+                <input id="tpl-inner-radius" type="number" min="0.000001" step="0.01" placeholder="auto">
+              </label>
+              <label>
+                Outer abs
+                <input id="tpl-outer-radius" type="number" min="0.000001" step="0.01" placeholder="auto">
+              </label>
+              <label>
+                n1
+                <input id="tpl-n1" type="number" min="1" max="80" step="1" value="2">
+              </label>
+              <label>
+                n2
+                <input id="tpl-n2" type="number" min="1" max="80" step="1" value="3">
+              </label>
+              <label>
+                n3
+                <input id="tpl-n3" type="number" min="1" max="80" step="1" value="3">
+              </label>
+              <label>
+                Bias
+                <input id="tpl-irregular-bias" type="number" step="0.1" value="1">
+              </label>
+              <label class="inline-label">
+                <span>Ring only</span>
+                <input id="tpl-omit-core" type="checkbox">
+              </label>
+              <button id="auto-template" type="button">Auto Template</button>
+              <button id="preview-template" type="button">Preview Template</button>
+              <button id="replace-template" class="primary-action wide" type="button">Replace Template</button>
+            </div>
+          </div>
+        </section>
+
         <section>
           <h2>Sets &amp; Materials</h2>
           <div class="controls">
@@ -857,6 +985,7 @@
                 Set name
                 <input id="set-name" type="text" value="SET-1">
               </label>
+              <button id="select-cell-set" type="button">Select Set</button>
               <button id="save-node-set" type="button">Save Nodes</button>
               <button id="save-cell-set" type="button">Save Cells</button>
             </div>
@@ -984,7 +1113,7 @@
           </section>
           <section class="help-card">
             <h3>About</h3>
-            <p>Version: 0.1.0</p>
+            <p>Version: 0.2</p>
             <p>Author: Huilong Ren, Tongji University</p>
             <p>Email: hlren@tongji.edu.cn</p>
             <p>Copyright (c) 2026 Huilong Ren</p>
@@ -1060,7 +1189,7 @@
           </section>
           <section class="help-card">
             <h3>关于</h3>
-            <p>版本：0.1.0</p>
+            <p>版本：0.2</p>
             <p>作者：Huilong Ren，同济大学</p>
             <p>邮箱：hlren@tongji.edu.cn</p>
             <p>版权：Copyright (c) 2026 Huilong Ren</p>
@@ -1091,6 +1220,8 @@
         previewRefinementByElementIds,
         regularizeHexSelection,
         replayHexRefineCommandScript,
+        growQ1BoundaryLayer,
+        replaceQ1BlockWithRectangleCircleTemplate,
         refineSessionPatch,
         redoRefinementSession,
         undoRefinementSession
@@ -1103,6 +1234,7 @@
       const statusEl = document.querySelector("#status");
       const reportEl = document.querySelector("#report");
       const themeModeEl = document.querySelector("#theme-mode");
+      const canvasBgColorEl = document.querySelector("#canvas-bg-color");
       const helpOpenButton = document.querySelector("#help-open");
       const helpDialog = document.querySelector("#help-dialog");
       const helpCloseButton = document.querySelector("#help-close");
@@ -1116,6 +1248,8 @@
       const statTransitionsEl = document.querySelector("#stat-transitions");
       const statWorkerEl = document.querySelector("#stat-worker");
       const kindEl = document.querySelector("#kind");
+      const kindH1Button = document.querySelector("#kind-h1");
+      const kindQ1Button = document.querySelector("#kind-q1");
       const nxEl = document.querySelector("#nx");
       const nyEl = document.querySelector("#ny");
       const nzEl = document.querySelector("#nz");
@@ -1153,6 +1287,27 @@
       const showHiddenButton = document.querySelector("#show-hidden");
       const undoButton = document.querySelector("#undo-refine");
       const redoButton = document.querySelector("#redo-refine");
+      const previewBoundaryLayerButton = document.querySelector("#preview-boundary-layer");
+      const growBoundaryLayerButton = document.querySelector("#grow-boundary-layer");
+      const autoTemplateButton = document.querySelector("#auto-template");
+      const previewTemplateButton = document.querySelector("#preview-template");
+      const replaceTemplateButton = document.querySelector("#replace-template");
+      const q1ToolsSection = document.querySelector("#q1-tools-section");
+      const blHeightEl = document.querySelector("#bl-height");
+      const blIncrementsEl = document.querySelector("#bl-increments");
+      const blGrowthRatioEl = document.querySelector("#bl-growth-ratio");
+      const blNodeArrangementEl = document.querySelector("#bl-node-arrangement");
+      const blScaleModeEl = document.querySelector("#bl-scale-mode");
+      const tplInnerSquareEl = document.querySelector("#tpl-inner-square");
+      const tplInnerCircleEl = document.querySelector("#tpl-inner-circle");
+      const tplOuterCircleEl = document.querySelector("#tpl-outer-circle");
+      const tplInnerRadiusEl = document.querySelector("#tpl-inner-radius");
+      const tplOuterRadiusEl = document.querySelector("#tpl-outer-radius");
+      const tplN1El = document.querySelector("#tpl-n1");
+      const tplN2El = document.querySelector("#tpl-n2");
+      const tplN3El = document.querySelector("#tpl-n3");
+      const tplIrregularBiasEl = document.querySelector("#tpl-irregular-bias");
+      const tplOmitCoreEl = document.querySelector("#tpl-omit-core");
       const exportButton = document.querySelector("#export-vtk");
       const exportInpButton = document.querySelector("#export-inp");
       const exportOfflineButton = document.querySelector("#export-offline");
@@ -1166,6 +1321,7 @@
       const meshFileEl = document.querySelector("#mesh-file");
       const setNameEl = document.querySelector("#set-name");
       const materialNameEl = document.querySelector("#material-name");
+      const selectCellSetButton = document.querySelector("#select-cell-set");
       const saveNodeSetButton = document.querySelector("#save-node-set");
       const saveCellSetButton = document.querySelector("#save-cell-set");
       const assignMaterialButton = document.querySelector("#assign-material");
@@ -1245,12 +1401,14 @@
       let deleteUndoSnapshots = [];
       let deleteRedoSnapshots = [];
       let preview = null;
+      let q1OperationPreview = null;
       let lastResult = null;
       let lastPreparation = null;
       let activeTool = "rotate";
       let recursiveFocusEnabled = false;
       let recursiveFocusBaseHiddenElements = null;
       let hidePickEnabled = false;
+      let selectCellSetPickEnabled = false;
       let boxSelectKeyHeld = false;
       let isDragging = false;
       let dragStart = null;
@@ -1371,6 +1529,7 @@
       const minScreenFaceAreaPixels = 8;
       const themeStorageKey = "hexrefine.theme";
       const legacyThemeStorageKey = "comformhex.theme";
+      const canvasBackgroundStorageKey = "hexrefine.canvasBackground";
       const helpLanguageStorageKey = "hexrefine.helpLanguage";
       const legacyHelpLanguageStorageKey = "comformhex.helpLanguage";
       let webglLineRenderer = null;
@@ -1400,10 +1559,43 @@
       function initializeTheme() {
         let savedTheme = "light";
         try {
-          savedTheme = localStorage.getItem(themeStorageKey) || localStorage.getItem(legacyThemeStorageKey) || "light";
+          savedTheme = localStorage.getItem(themeStorageKey) || "light";
+          localStorage.removeItem(legacyThemeStorageKey);
         } catch (error) {
         }
         applyTheme(savedTheme);
+      }
+
+      function defaultCanvasBackgroundColor() {
+        return document.body.dataset.theme === "dark" ? "#0d1319" : "#767892";
+      }
+
+      function normalizeCanvasBackgroundColor(color) {
+        return /^#[0-9a-f]{6}$/i.test(color ?? "") ? color : defaultCanvasBackgroundColor();
+      }
+
+      function applyCanvasBackground(color) {
+        const normalized = normalizeCanvasBackgroundColor(color);
+        canvasBgColorEl.value = normalized;
+        try {
+          localStorage.setItem(canvasBackgroundStorageKey, normalized);
+        } catch (error) {
+        }
+        requestDraw();
+      }
+
+      function initializeCanvasBackground() {
+        let savedColor = defaultCanvasBackgroundColor();
+        try {
+          savedColor = localStorage.getItem(canvasBackgroundStorageKey) || savedColor;
+        } catch (error) {
+        }
+        applyCanvasBackground(savedColor);
+      }
+
+      function fillCanvasBackground() {
+        ctx.fillStyle = normalizeCanvasBackgroundColor(canvasBgColorEl.value);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
       function applyHelpLanguage(language) {
@@ -1506,9 +1698,22 @@
           : "Hide selected cells. If nothing is selected, click to enter continuous hide-pick mode.";
       }
 
+      function syncSelectCellSetPickButton() {
+        selectCellSetButton.textContent = selectCellSetPickEnabled ? "Pick Set On" : "Select Set";
+        selectCellSetButton.setAttribute("aria-pressed", String(selectCellSetPickEnabled));
+        selectCellSetButton.title = selectCellSetPickEnabled
+          ? "Click a 2D cell in the viewport to select the cell set containing it."
+          : "Arm set picking, then click one 2D cell to select its whole cell set.";
+      }
+
       function setHidePickEnabled(value) {
         hidePickEnabled = Boolean(value);
         syncHidePickButton();
+      }
+
+      function setSelectCellSetPickEnabled(value) {
+        selectCellSetPickEnabled = Boolean(value);
+        syncSelectCellSetPickButton();
       }
 
       function disableRecursiveFocusSelection() {
@@ -1814,7 +2019,9 @@
         nodeSets.clear();
         cellSets.clear();
         cellSetMaterials.clear();
+        setSelectCellSetPickEnabled(false);
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         setGridCommandFactoryToGenerated();
@@ -1823,10 +2030,13 @@
         syncSliceControls();
         updateReport();
         draw();
+        const generatedGridLabel = kindEl.value === "Q1"
+          ? `${nxEl.value} x ${nyEl.value}`
+          : `${nxEl.value} x ${nyEl.value} x ${nzEl.value}`;
         setStatus(
           overGuiGuidance
             ? `${guiOptimizationMessage(baseMesh.elements.length, "Generated")} You can continue in the GUI, but Offline Job is recommended for heavier work.`
-            : "Grid generated.",
+            : `Grid generated from dx (${generatedGridLabel}).`,
           !overGuiGuidance
         );
       }
@@ -1916,7 +2126,10 @@
             zoom: camera.zoom,
             center: [...camera.center]
           },
-          projectionMode
+          projectionMode,
+          operationLabel: options.operationLabel ?? "delete",
+          undoCommandKind: options.undoCommandKind ?? "undo.delete",
+          redoCommandKind: options.redoCommandKind ?? "redo.delete"
         };
       }
 
@@ -1944,6 +2157,7 @@
           cellSetMaterials.set(name, { ...material });
         }
         preview = cloneSnapshotValue(snapshot.preview);
+        q1OperationPreview = null;
         lastResult = cloneSnapshotValue(snapshot.lastResult);
         lastPreparation = cloneSnapshotValue(snapshot.lastPreparation);
         camera.yaw = snapshot.camera.yaw;
@@ -2192,6 +2406,8 @@
           && kind !== "redo.refine"
           && kind !== "undo.delete"
           && kind !== "redo.delete"
+          && kind !== "undo.mesh-operation"
+          && kind !== "redo.mesh-operation"
         ) {
           clearDeleteRedoHistory();
         }
@@ -2407,7 +2623,9 @@
         resetDeleteHistory();
         selected = new Set();
         selectedNodes = new Set();
+        setSelectCellSetPickEnabled(false);
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         guiWorkingSetReleased = false;
@@ -2482,7 +2700,9 @@
           nodeSets.clear();
           cellSets.clear();
           cellSetMaterials.clear();
+          setSelectCellSetPickEnabled(false);
           preview = null;
+          q1OperationPreview = null;
           lastResult = null;
           lastPreparation = null;
           syncKindControlsFromMesh();
@@ -2512,6 +2732,7 @@
           lastPreparation = prepared;
           if (prepared.elementIds.length === 0) {
             preview = null;
+            q1OperationPreview = null;
             lastResult = null;
             updateReport();
             draw();
@@ -2531,6 +2752,7 @@
               ? { transitionEscapeCount: prepared.transitionEscapeCount }
               : {})
           };
+          q1OperationPreview = null;
           const escaped = countTransitionEscapes(preview.plan, prepared.outerElementIds);
           if (escaped > 0) {
             preview.transitionEscapeCount = escaped;
@@ -2563,6 +2785,7 @@
           lastPreparation = prepared;
           if (prepared.elementIds.length === 0) {
             preview = null;
+            q1OperationPreview = null;
             lastResult = null;
             updateReport();
             draw();
@@ -2611,6 +2834,7 @@
           selected = new Set();
           selectedNodes = new Set();
           preview = null;
+          q1OperationPreview = null;
           lastPreparation = null;
           const localCheckedElementCount = localConformance?.checkedElementIds?.length ?? 0;
           const localHangingCount = localConformance?.report?.hanging?.length ?? 0;
@@ -2662,11 +2886,15 @@
         if (!command) {
           const snapshot = deleteUndoSnapshots.pop();
           if (snapshot) {
-            deleteRedoSnapshots.push(captureDeleteUndoSnapshot());
+            deleteRedoSnapshots.push(captureDeleteUndoSnapshot({
+              operationLabel: snapshot.operationLabel,
+              undoCommandKind: snapshot.undoCommandKind,
+              redoCommandKind: snapshot.redoCommandKind
+            }));
             restoreDeleteUndoSnapshot(snapshot);
-            recordCommand("undo.delete");
+            recordCommand(snapshot.undoCommandKind ?? "undo.delete");
             setBusy(false);
-            setStatus("Undid delete.", true);
+            setStatus(`Undid ${snapshot.operationLabel ?? "delete"}.`, true);
             return;
           }
           setBusy(false);
@@ -2686,6 +2914,7 @@
         selected = new Set();
         selectedNodes = new Set();
         preview = null;
+        q1OperationPreview = null;
         lastPreparation = null;
         lastResult = null;
         fitCameraToMesh();
@@ -2705,11 +2934,15 @@
         if (!command) {
           const snapshot = deleteRedoSnapshots.pop();
           if (snapshot) {
-            deleteUndoSnapshots.push(captureDeleteUndoSnapshot());
+            deleteUndoSnapshots.push(captureDeleteUndoSnapshot({
+              operationLabel: snapshot.operationLabel,
+              undoCommandKind: snapshot.undoCommandKind,
+              redoCommandKind: snapshot.redoCommandKind
+            }));
             restoreDeleteUndoSnapshot(snapshot);
-            recordCommand("redo.delete");
+            recordCommand(snapshot.redoCommandKind ?? "redo.delete");
             setBusy(false);
-            setStatus("Redid delete.", true);
+            setStatus(`Redid ${snapshot.operationLabel ?? "delete"}.`, true);
             return;
           }
           setBusy(false);
@@ -2729,6 +2962,7 @@
         selected = new Set();
         selectedNodes = new Set();
         preview = null;
+        q1OperationPreview = null;
         lastPreparation = null;
         lastResult = null;
         fitCameraToMesh();
@@ -3841,6 +4075,9 @@
           if (recordKeptElements) {
             keptElementIds.push(elementId);
           }
+          if (!recordKeptElements) {
+            keptElementIds.push(elementId);
+          }
         }
         mesh = {
           kind: inferKind(),
@@ -3860,14 +4097,14 @@
               deletedElementCount: selected.size,
               sourceElementCount
             });
+        remapCellSetsAfterElementCompaction(keptElementIds);
         resetRefinementSession(mesh);
         fitCameraToMesh();
         selected = new Set();
         selectedNodes = new Set();
-        nodeSets.clear();
-        cellSets.clear();
-        cellSetMaterials.clear();
+        setSelectCellSetPickEnabled(false);
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         deleteUndoSnapshots.push(undoSnapshot);
@@ -3887,9 +4124,17 @@
 
       function setBusy(value) {
         busy = value;
+        const q1OperationDisabled = value || kindEl.value !== "Q1";
         previewButton.disabled = value;
         refineButton.disabled = value;
         deleteButton.disabled = value;
+        previewBoundaryLayerButton.disabled = q1OperationDisabled;
+        growBoundaryLayerButton.disabled = q1OperationDisabled;
+        autoTemplateButton.disabled = q1OperationDisabled;
+        previewTemplateButton.disabled = q1OperationDisabled;
+        replaceTemplateButton.disabled = q1OperationDisabled;
+        tplOmitCoreEl.disabled = q1OperationDisabled;
+        tplIrregularBiasEl.disabled = q1OperationDisabled;
         hideSelectedButton.disabled = value;
         showHiddenButton.disabled = value;
         undoButton.disabled = value;
@@ -3902,6 +4147,7 @@
         importScriptButton.disabled = value;
         importMeshButton.disabled = value;
         clearScriptButton.disabled = value;
+        selectCellSetButton.disabled = q1OperationDisabled;
         saveNodeSetButton.disabled = value;
         saveCellSetButton.disabled = value;
         assignMaterialButton.disabled = value;
@@ -3928,7 +4174,9 @@
         cellSets.clear();
         cellSetMaterials.clear();
         resetDeleteHistory();
+        setSelectCellSetPickEnabled(false);
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         performanceStats.activeBuildMs = 0;
@@ -4392,6 +4640,105 @@
         );
       }
 
+      function armSelectCellSetByPick() {
+        if (inferKind() !== "Q1") {
+          setStatus("Set picking is available for 2D Q1 meshes.", false);
+          return;
+        }
+        if (cellSets.size === 0) {
+          setStatus("No cell sets are available to pick.", false);
+          return;
+        }
+        setSelectCellSetPickEnabled(!selectCellSetPickEnabled);
+        if (selectCellSetPickEnabled) {
+          selectionTargetEl.value = "cells";
+          setHidePickEnabled(false);
+          setTool("select");
+          setStatus("Set pick armed. Click one 2D cell in the canvas to select its whole cell set.", true);
+        } else {
+          setStatus("Set pick mode off.", true);
+        }
+      }
+
+      function selectCellSetContainingElement(elementId, point = null) {
+        ensureActiveBuildReady();
+        const cellId = activeBuildCellIdByElementId(activeBuild, elementId);
+        if (!cellId) {
+          setStatus(`Cell ${elementId} is not mapped to an active set id.`, false);
+          return false;
+        }
+        const match = findCellSetContainingCellId(cellId);
+        if (!match) {
+          setStatus(`Cell ${elementId} is not in any cell set.`, false);
+          return false;
+        }
+        selectCellSetByName(match.name, {
+          pickedElementId: elementId,
+          pickedCellId: cellId,
+          point,
+          matchedCellId: match.cellId
+        });
+        return true;
+      }
+
+      function findCellSetContainingCellId(cellId) {
+        for (const [name, cellIds] of cellSets) {
+          const matched = cellIds.find((candidate) => candidate === cellId);
+          if (matched) {
+            return { name, cellId: matched };
+          }
+        }
+        return null;
+      }
+
+      function selectCellSetByName(name, pick = null) {
+        const cellIds = cellSets.get(name);
+        if (!cellIds) {
+          setStatus(`Cell set ${name} does not exist.`, false);
+          return;
+        }
+        ensureActiveBuildReady();
+        const next = new Set();
+        const missing = [];
+        for (const cellId of cellIds) {
+          const elementId = activeBuildElementIdByCellId(refinementSession, activeBuild, cellId);
+          if (elementId === undefined || isElementHidden(elementId)) {
+            missing.push(cellId);
+          } else {
+            next.add(elementId);
+          }
+        }
+        selected = next;
+        selectedNodes = new Set();
+        preview = null;
+        q1OperationPreview = null;
+        lastResult = null;
+        lastPreparation = null;
+        selectionTargetEl.value = "cells";
+        setNameEl.value = name;
+        recordCommand("select.cell-set", {
+          name,
+          cellIds: [...cellIds],
+          elementIds: [...selected].sort((a, b) => a - b),
+          missingCellIds: missing,
+          ...(pick ? {
+            pickedElementId: pick.pickedElementId,
+            pickedCellId: pick.pickedCellId,
+            matchedCellId: pick.matchedCellId,
+            ...(pick.point ? { point: [pick.point.x, pick.point.y] } : {})
+          } : {}),
+          ...selectionSnapshotForCommand()
+        });
+        updateReport();
+        draw();
+        setStatus(
+          missing.length > 0
+            ? `Selected ${selected.size} visible cells from ${name}; skipped ${missing.length} inactive or hidden refs.`
+            : `Selected ${selected.size} cells from ${name}.`,
+          selected.size > 0 && missing.length === 0
+        );
+      }
+
       function assignMaterialToCellSet() {
         const name = sanitizeSetName(setNameEl.value);
         if (!cellSets.has(name)) {
@@ -4422,6 +4769,568 @@
         }
         updateReport();
         setStatus(removedNode || removedCell ? `Deleted set ${name}.` : `Set ${name} was not found.`, removedNode || removedCell);
+      }
+
+      function applyQ1BoundaryLayerGrow() {
+        if (busy) {
+          return;
+        }
+        try {
+          const input = q1BoundaryLayerInput();
+          const result = growQ1BoundaryLayer(mesh, input.elementIds, input.options);
+          deleteUndoSnapshots.push(captureDeleteUndoSnapshot({
+            operationLabel: "2D boundary layer",
+            undoCommandKind: "undo.mesh-operation",
+            redoCommandKind: "redo.mesh-operation"
+          }));
+          clearQ1OperationPreview();
+          resetQ1MeshOperationSession(result.mesh, { preserveSets: true });
+          const prefix = uniqueSetPrefix("BL");
+          saveGeneratedCellSet(`${prefix}_ALL`, result.generatedElementIds);
+          result.layerElementIds.forEach((ids, index) => saveGeneratedCellSet(`${prefix}_L${index + 1}`, ids));
+          selected = new Set(result.generatedElementIds);
+          recordCommand("mesh.boundary-layer-grow", {
+            elementIds: input.elementIds,
+            ...input.options,
+            setPrefix: prefix,
+            generatedElementCount: result.generatedElementIds.length,
+            boundaryEdgeCount: result.boundaryEdgeCount
+          });
+          updateReport();
+          draw();
+          setStatus(`Grew ${input.options.increments} boundary layers from ${result.boundaryEdgeCount} boundary edges. Sets ${prefix}_ALL and layer sets were created.`, true);
+        } catch (error) {
+          setStatus(errorMessage(error), false);
+        }
+      }
+
+      function previewQ1BoundaryLayerGrow() {
+        if (busy) {
+          return;
+        }
+        try {
+          const input = q1BoundaryLayerInput();
+          const result = growQ1BoundaryLayer(mesh, input.elementIds, input.options);
+          setQ1OperationPreview({
+            kind: "boundary-layer",
+            label: "Boundary layer",
+            mesh: result.mesh,
+            generatedElementIds: result.generatedElementIds,
+            summary: [
+              `selected cells: ${input.elementIds.length}`,
+              `boundary edges: ${result.boundaryEdgeCount}`,
+              `new elements: ${result.generatedElementIds.length}`,
+              `increments: ${input.options.increments}`,
+              `node arrangement: ${input.options.nodeArrangement}`,
+              `scale: ${input.options.scaleMode}`
+            ]
+          });
+          setStatus(`Previewing ${input.options.increments} boundary layers from ${result.boundaryEdgeCount} boundary edges. Confirm to apply.`, true);
+        } catch (error) {
+          setStatus(errorMessage(error), false);
+        }
+      }
+
+      function applyQ1RectangleCircleTemplate() {
+        if (busy) {
+          return;
+        }
+        try {
+          const input = q1TemplateReplacementInput();
+          const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, input.elementIds, input.options);
+          deleteUndoSnapshots.push(captureDeleteUndoSnapshot({
+            operationLabel: "2D template replacement",
+            undoCommandKind: "undo.mesh-operation",
+            redoCommandKind: "redo.mesh-operation"
+          }));
+          clearQ1OperationPreview();
+          remapCellSetsAfterQ1TemplateReplacement(result);
+          resetQ1MeshOperationSession(result.mesh, { preserveSets: true });
+          const prefix = uniqueSetPrefix("RCT");
+          saveGeneratedCellSet(`${prefix}_CORE`, result.regionElementIds.core);
+          saveGeneratedCellSet(`${prefix}_SQUARE_CIRCLE`, result.regionElementIds.squareToCircle);
+          saveGeneratedCellSet(`${prefix}_ANNULUS`, result.regionElementIds.annulus);
+          saveGeneratedCellSet(`${prefix}_CIRCLE_SQUARE`, result.regionElementIds.circleToSquare);
+          saveGeneratedCellSet(`${prefix}_ALL`, result.generatedElementIds);
+          selected = new Set(result.generatedElementIds);
+          recordCommand("mesh.template-rectangle-circle", {
+            elementIds: input.elementIds,
+            ...input.options,
+            setPrefix: prefix,
+            replacedElementCount: result.replacedElementIds.length,
+            generatedElementCount: result.generatedElementIds.length,
+            blockDimensions: result.blockDimensions
+          });
+          updateReport();
+          draw();
+          setStatus(`Replaced ${result.blockDimensions[0]} x ${result.blockDimensions[1]} Q1 block with rectangle-circle template. Region sets ${prefix}_* were created.`, true);
+        } catch (error) {
+          setStatus(errorMessage(error), false);
+        }
+      }
+
+      function previewQ1RectangleCircleTemplate() {
+        if (busy) {
+          return;
+        }
+        try {
+          const input = q1TemplateReplacementInput();
+          const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, input.elementIds, input.options);
+          setQ1OperationPreview({
+            kind: "rectangle-circle-template",
+            label: "Rectangle-circle template",
+            mesh: result.mesh,
+            generatedElementIds: result.generatedElementIds,
+            summary: [
+              `selected cells: ${input.elementIds.length}`,
+              `block: ${result.blockDimensions[0]} x ${result.blockDimensions[1]}`,
+              `new elements: ${result.generatedElementIds.length}`,
+              input.options.omitCore ? "core/internal transition: omitted" : "core: filled",
+              `irregular bias: ${input.options.irregularBoundaryBias}`,
+              input.options.innerCircleRadius === undefined
+                ? `inner ratio: ${input.options.innerCircleRatio}`
+                : `inner abs radius: ${input.options.innerCircleRadius}`,
+              input.options.outerCircleRadius === undefined
+                ? `outer ratio: ${input.options.outerCircleRatio}`
+                : `outer abs radius: ${input.options.outerCircleRadius}`
+            ]
+          });
+          setStatus(`Previewing rectangle-circle template for ${result.blockDimensions[0]} x ${result.blockDimensions[1]} block. Confirm to apply.`, true);
+        } catch (error) {
+          setStatus(errorMessage(error), false);
+        }
+      }
+
+      function autoAdjustQ1TemplateParameters() {
+        if (busy) {
+          return;
+        }
+        try {
+          const block = selectedQ1BlockMetrics();
+          const n1 = integerFromInput(tplN1El, 2, 80);
+          const n2 = integerFromInput(tplN2El, 3, 80);
+          const n3 = integerFromInput(tplN3El, 3, 80);
+          const totalLayers = n1 + n2 + n3;
+          const minSpan = Math.min(block.width, block.height);
+          const radiusScale = minSpan * 0.5;
+          const cellSize = Math.min(block.width / block.dimensions[0], block.height / block.dimensions[1]);
+          const radialStep = Math.min(cellSize, radiusScale * 0.86 / Math.max(1, totalLayers));
+          const innerSquareRadius = clamp(radiusScale - radialStep * totalLayers, radiusScale * 0.08, radiusScale * 0.62);
+          const innerCircleRadius = clamp(innerSquareRadius + radialStep * n1, innerSquareRadius + radiusScale * 0.02, radiusScale * 0.88);
+          const outerCircleRadius = clamp(innerCircleRadius + radialStep * n2, innerCircleRadius + radiusScale * 0.02, radiusScale * 0.97);
+          const innerSquareRatio = innerSquareRadius / radiusScale;
+          const innerCircleRatio = innerCircleRadius / radiusScale;
+          const outerCircleRatio = outerCircleRadius / radiusScale;
+          if (!(innerSquareRatio < innerCircleRatio && innerCircleRatio < outerCircleRatio && outerCircleRatio < 1)) {
+            throw new Error("selected block is too small for the current template layer counts");
+          }
+          tplInnerSquareEl.value = formatControlNumber(innerSquareRatio);
+          tplInnerCircleEl.value = formatControlNumber(innerCircleRatio);
+          tplOuterCircleEl.value = formatControlNumber(outerCircleRatio);
+          tplInnerRadiusEl.value = formatControlNumber(innerCircleRadius);
+          tplOuterRadiusEl.value = formatControlNumber(outerCircleRadius);
+          clearQ1OperationPreview();
+          updateReport();
+          draw();
+          setStatus(`Auto template suggestion filled for ${block.dimensions[0]} x ${block.dimensions[1]} block. Edit values, then preview or replace.`, true);
+        } catch (error) {
+          setStatus(errorMessage(error), false);
+        }
+      }
+
+      function resetQ1MeshOperationSession(nextMesh, options = {}) {
+        resetRefinementSession(nextMesh);
+        hiddenElements = new Set();
+        selected = new Set();
+        selectedNodes = new Set();
+        if (!options.preserveSets) {
+          nodeSets.clear();
+          cellSets.clear();
+          cellSetMaterials.clear();
+        } else if (!options.preserveNodeSets) {
+          nodeSets.clear();
+        }
+        setSelectCellSetPickEnabled(false);
+        preview = null;
+        q1OperationPreview = null;
+        lastResult = null;
+        lastPreparation = null;
+        refreshMeshFromSession();
+        setGridCommandFactoryToImported(nextMesh, "q1-operation");
+        fitCameraToMesh();
+        syncSliceControls();
+      }
+
+      function setQ1OperationPreview(nextPreview) {
+        q1OperationPreview = nextPreview;
+        preview = null;
+        lastResult = null;
+        lastPreparation = null;
+        updateReport();
+        draw();
+      }
+
+      function clearQ1OperationPreview() {
+        q1OperationPreview = null;
+      }
+
+      function q1BoundaryLayerInput() {
+        if (inferKind() !== "Q1") {
+          throw new Error("Boundary layer grow is available only for 2D Q1 meshes.");
+        }
+        if (selected.size === 0) {
+          throw new Error("Select Q1 boundary cells before growing a boundary layer.");
+        }
+        return {
+          elementIds: [...selected].sort((a, b) => a - b),
+          options: {
+            height: positiveNumberFromInput(blHeightEl, 0.2),
+            increments: integerFromInput(blIncrementsEl, 3, 80),
+            growthRatio: positiveNumberFromInput(blGrowthRatioEl, 1),
+            nodeArrangement: positiveNumberFromInput(blNodeArrangementEl, 1),
+            scaleMode: boundaryLayerScaleMode()
+          }
+        };
+      }
+
+      function q1TemplateReplacementInput() {
+        if (inferKind() !== "Q1") {
+          throw new Error("Template replacement is available only for 2D Q1 meshes.");
+        }
+        if (selected.size === 0) {
+          throw new Error("Select a rectangular Q1 block before replacing it with the template.");
+        }
+        const innerCircleRadius = optionalPositiveNumberFromInput(tplInnerRadiusEl);
+        const outerCircleRadius = optionalPositiveNumberFromInput(tplOuterRadiusEl);
+        return {
+          elementIds: [...selected].sort((a, b) => a - b),
+          options: {
+            innerSquareRatio: ratioFromInput(tplInnerSquareEl, 0.28),
+            innerCircleRatio: ratioFromInput(tplInnerCircleEl, 0.45),
+            outerCircleRatio: ratioFromInput(tplOuterCircleEl, 0.55),
+            ...(innerCircleRadius === undefined ? {} : { innerCircleRadius }),
+            ...(outerCircleRadius === undefined ? {} : { outerCircleRadius }),
+            squareToCircleLayers: integerFromInput(tplN1El, 2, 80),
+            annulusLayers: integerFromInput(tplN2El, 3, 80),
+            circleToSquareLayers: integerFromInput(tplN3El, 3, 80),
+            irregularBoundaryBias: numberFromInput(tplIrregularBiasEl, 1),
+            omitCore: tplOmitCoreEl.checked,
+            mergeTolerance: meshMergeTolerance
+          }
+        };
+      }
+
+      function selectedQ1BlockMetrics() {
+        if (inferKind() !== "Q1") {
+          throw new Error("Template auto parameters are available only for 2D Q1 meshes.");
+        }
+        const selectedIds = [...selected]
+          .filter((elementId) => Number.isInteger(elementId) && elementId >= 1 && elementId <= mesh.elements.length)
+          .sort((a, b) => a - b);
+        if (selectedIds.length === 0) {
+          throw new Error("Select a rectangular Q1 block before auto-adjusting the template.");
+        }
+        const tolerance = Math.max(meshMergeTolerance * 100, minSelectedQ1EdgeLength(selectedIds) * 1e-7, 1e-10);
+        const topology = selectedQ1TopologicalBlockBoundary(selectedIds);
+        const usedNodeIds = new Set();
+        for (const elementId of selectedIds) {
+          for (const nodeId of mesh.elements[elementId - 1] ?? []) {
+            usedNodeIds.add(nodeId);
+          }
+        }
+        const points = [...usedNodeIds].map((nodeId) => mesh.nodes[nodeId - 1]).filter(Boolean);
+        const xValues = points.map((point) => point[0] ?? 0);
+        const yValues = points.map((point) => point[1] ?? 0);
+        const minX = Math.min(...xValues);
+        const maxX = Math.max(...xValues);
+        const minY = Math.min(...yValues);
+        const maxY = Math.max(...yValues);
+        const width = topology.width || (maxX - minX);
+        const height = topology.height || (maxY - minY);
+        if (width <= 1e-12 || height <= 1e-12) {
+          throw new Error("Selected Q1 block has zero size.");
+        }
+        return {
+          dimensions: topology.dimensions,
+          width,
+          height
+        };
+      }
+
+      function selectedQ1TopologicalBlockBoundary(selectedIds) {
+        const ownersByKey = new Map();
+        const selectedNodeUseCount = new Map();
+        for (const elementId of selectedIds) {
+          const element = mesh.elements[elementId - 1];
+          if (!element) {
+            continue;
+          }
+          for (const nodeId of element) {
+            selectedNodeUseCount.set(nodeId, (selectedNodeUseCount.get(nodeId) ?? 0) + 1);
+          }
+          for (const [a, b] of edgeSets.Q1) {
+            const nodeA = element[a];
+            const nodeB = element[b];
+            const key = q1NodePairKey(nodeA, nodeB);
+            const owners = ownersByKey.get(key) ?? [];
+            owners.push([nodeA, nodeB]);
+            ownersByKey.set(key, owners);
+          }
+        }
+        const boundaryEdges = [...ownersByKey.values()]
+          .filter((owners) => owners.length === 1)
+          .map((owners) => owners[0]);
+        const loop = orderedQ1BoundaryLoop(boundaryEdges);
+        const cornerNodes = loop.filter((nodeId) => selectedNodeUseCount.get(nodeId) === 1);
+        if (cornerNodes.length !== 4) {
+          throw new Error("Selected cells must form a topological rectangular Q1 block with four corners.");
+        }
+        const orientedLoop = polygonAreaFromNodeIds(loop) < 0 ? [loop[0], ...loop.slice(1).reverse()] : loop;
+        const loopCorners = orientedLoop.filter((nodeId) => cornerNodes.includes(nodeId));
+        const startIndex = orientedLoop.indexOf(loopCorners[0]);
+        const rotatedLoop = [...orientedLoop.slice(startIndex), ...orientedLoop.slice(0, startIndex)];
+        const chains = splitQ1LoopAtCorners(rotatedLoop, new Set(cornerNodes));
+        const sideLengths = chains.map((chain) => chain.length - 1);
+        if (chains.length !== 4 || sideLengths[0] !== sideLengths[2] || sideLengths[1] !== sideLengths[3]) {
+          throw new Error("Opposite sides of the selected topological Q1 block must have matching segment counts.");
+        }
+        const sidePointChains = chains.map((chain) => chain.map((nodeId) => mesh.nodes[nodeId - 1]).filter(Boolean));
+        const width = (polylineLength2(sidePointChains[0]) + polylineLength2(sidePointChains[2])) * 0.5;
+        const height = (polylineLength2(sidePointChains[1]) + polylineLength2(sidePointChains[3])) * 0.5;
+        return { dimensions: [sideLengths[0], sideLengths[1]], width, height };
+      }
+
+      function orderedQ1BoundaryLoop(boundaryEdges) {
+        if (boundaryEdges.length === 0) {
+          throw new Error("Selected cells do not have an exterior boundary.");
+        }
+        const adjacency = new Map();
+        for (const [a, b] of boundaryEdges) {
+          const aNeighbors = adjacency.get(a) ?? [];
+          aNeighbors.push(b);
+          adjacency.set(a, aNeighbors);
+          const bNeighbors = adjacency.get(b) ?? [];
+          bNeighbors.push(a);
+          adjacency.set(b, bNeighbors);
+        }
+        for (const [nodeId, neighbors] of adjacency) {
+          if (neighbors.length !== 2) {
+            throw new Error(`Selected cells do not form a single closed topological boundary at node ${nodeId}.`);
+          }
+        }
+        const start = boundaryEdges[0][0];
+        const loop = [start];
+        let previous = -1;
+        let current = start;
+        for (let guard = 0; guard <= boundaryEdges.length; guard += 1) {
+          const neighbors = adjacency.get(current);
+          const next = neighbors[0] === previous ? neighbors[1] : neighbors[0];
+          if (next === start) {
+            if (loop.length !== adjacency.size) {
+              throw new Error("Selected cells boundary has more than one connected loop.");
+            }
+            return loop;
+          }
+          if (loop.includes(next)) {
+            throw new Error("Selected cells boundary self-intersects topologically.");
+          }
+          loop.push(next);
+          previous = current;
+          current = next;
+        }
+        throw new Error("Selected cells boundary is not closed.");
+      }
+
+      function splitQ1LoopAtCorners(loop, corners) {
+        const chains = [];
+        let chain = [loop[0]];
+        for (const nodeId of [...loop.slice(1), loop[0]]) {
+          chain.push(nodeId);
+          if (corners.has(nodeId)) {
+            chains.push(chain);
+            chain = [nodeId];
+          }
+        }
+        return chains;
+      }
+
+      function polygonAreaFromNodeIds(nodeIds) {
+        let area = 0;
+        for (let index = 0; index < nodeIds.length; index += 1) {
+          const a = mesh.nodes[nodeIds[index] - 1];
+          const b = mesh.nodes[nodeIds[(index + 1) % nodeIds.length] - 1];
+          area += (a?.[0] ?? 0) * (b?.[1] ?? 0) - (b?.[0] ?? 0) * (a?.[1] ?? 0);
+        }
+        return area * 0.5;
+      }
+
+      function q1NodePairKey(a, b) {
+        return a < b ? `${a}:${b}` : `${b}:${a}`;
+      }
+
+      function polylineLength2(points) {
+        let total = 0;
+        for (let index = 0; index + 1 < points.length; index += 1) {
+          const a = points[index];
+          const b = points[index + 1];
+          total += Math.hypot((a?.[0] ?? 0) - (b?.[0] ?? 0), (a?.[1] ?? 0) - (b?.[1] ?? 0));
+        }
+        return total;
+      }
+
+      function minSelectedQ1EdgeLength(elementIds) {
+        let minLength = Infinity;
+        const edges = edgeSets.Q1;
+        for (const elementId of elementIds) {
+          const element = mesh.elements[elementId - 1];
+          if (!element) {
+            continue;
+          }
+          for (const [a, b] of edges) {
+            const pa = mesh.nodes[element[a] - 1];
+            const pb = mesh.nodes[element[b] - 1];
+            if (!pa || !pb) {
+              continue;
+            }
+            const length = Math.hypot((pa[0] ?? 0) - (pb[0] ?? 0), (pa[1] ?? 0) - (pb[1] ?? 0));
+            if (length > 1e-12) {
+              minLength = Math.min(minLength, length);
+            }
+          }
+        }
+        return Number.isFinite(minLength) ? minLength : 1;
+      }
+
+      function uniqueNumbersWithinTolerance(values, tolerance) {
+        const sorted = [...values].sort((a, b) => a - b);
+        const unique = [];
+        for (const value of sorted) {
+          if (unique.length === 0 || Math.abs(value - unique[unique.length - 1]) > tolerance) {
+            unique.push(value);
+          }
+        }
+        return unique;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function formatControlNumber(value) {
+        return Number(value.toPrecision(8)).toString();
+      }
+
+      function saveGeneratedCellSet(name, elementIds) {
+        const cellIds = elementIds.map((elementId) => `e${elementId}`);
+        cellSets.set(name, cellIds);
+        cellSetMaterials.set(name, currentMaterial());
+      }
+
+      function remapCellSetsAfterElementCompaction(keptElementIds) {
+        ensureActiveBuildReady();
+        const replacementsByOldCellId = new Map();
+        keptElementIds.forEach((oldElementId, index) => {
+          const oldCellId = activeBuildCellIdByElementId(activeBuild, oldElementId);
+          if (oldCellId) {
+            replacementsByOldCellId.set(oldCellId, [`e${index + 1}`]);
+          }
+        });
+        remapCellSetsByCellIdMap(replacementsByOldCellId);
+      }
+
+      function remapCellSetsAfterQ1TemplateReplacement(result) {
+        ensureActiveBuildReady();
+        const replaced = new Set(result.replacedElementIds);
+        const generatedCellIds = result.generatedElementIds.map((elementId) => `e${elementId}`);
+        const replacementsByOldCellId = new Map();
+        let nextKeptElementId = 1;
+        for (let oldElementId = 1; oldElementId <= mesh.elements.length; oldElementId += 1) {
+          const oldCellId = activeBuildCellIdByElementId(activeBuild, oldElementId);
+          if (!oldCellId) {
+            continue;
+          }
+          if (replaced.has(oldElementId)) {
+            replacementsByOldCellId.set(oldCellId, generatedCellIds);
+          } else {
+            replacementsByOldCellId.set(oldCellId, [`e${nextKeptElementId}`]);
+            nextKeptElementId += 1;
+          }
+        }
+        remapCellSetsByCellIdMap(replacementsByOldCellId);
+      }
+
+      function remapCellSetsByCellIdMap(replacementsByOldCellId) {
+        for (const [name, cellIds] of [...cellSets]) {
+          const next = [];
+          for (const cellId of cellIds) {
+            const replacements = replacementsByOldCellId.get(cellId);
+            if (replacements) {
+              next.push(...replacements);
+            }
+          }
+          const unique = uniqueStrings(next);
+          if (unique.length > 0) {
+            cellSets.set(name, unique);
+          } else {
+            cellSets.delete(name);
+            cellSetMaterials.delete(name);
+          }
+        }
+      }
+
+      function uniqueStrings(values) {
+        return [...new Set(values)];
+      }
+
+      function uniqueSetPrefix(prefix) {
+        let index = 1;
+        let candidate = `${prefix}${index}`;
+        while ([...cellSets.keys()].some((name) => name === candidate || name.startsWith(`${candidate}_`))) {
+          index += 1;
+          candidate = `${prefix}${index}`;
+        }
+        return candidate;
+      }
+
+      function positiveNumberFromInput(input, fallback) {
+        const value = numberFromInput(input, fallback);
+        if (!Number.isFinite(value) || value <= 0) {
+          throw new Error(`${input.id} must be a positive number`);
+        }
+        return value;
+      }
+
+      function nonnegativeNumberFromInput(input, fallback) {
+        const value = numberFromInput(input, fallback);
+        if (!Number.isFinite(value) || value < 0) {
+          throw new Error(`${input.id} must be a nonnegative number`);
+        }
+        return value;
+      }
+
+      function ratioFromInput(input, fallback) {
+        const value = positiveNumberFromInput(input, fallback);
+        if (value >= 1) {
+          throw new Error(`${input.id} must be less than 1`);
+        }
+        return value;
+      }
+
+      function optionalPositiveNumberFromInput(input) {
+        const text = String(input.value ?? "").trim();
+        if (!text) {
+          return undefined;
+        }
+        const value = Number(text);
+        if (!Number.isFinite(value) || value <= 0) {
+          throw new Error(`${input.id} must be a positive number or empty`);
+        }
+        return value;
+      }
+
+      function boundaryLayerScaleMode() {
+        const mode = blScaleModeEl.value;
+        return mode === "fit-bounds" || mode === "preserve-area" ? mode : "none";
       }
 
       function nextSetName(name) {
@@ -4463,12 +5372,24 @@
 
       function updateStats() {
         const stats = sessionStats();
-        statKindEl.textContent = inferKind();
-        statElementsEl.textContent = String(mesh.elements.length);
-        statNodesEl.textContent = String(mesh.nodes.length);
-        statLevelsEl.textContent = stats.levels.length > 0 ? stats.levels.join(",") : "0";
-        statTransitionsEl.textContent = String(stats.transitionCells);
-        statWorkerEl.textContent = workerStatus;
+        if (statKindEl) {
+          statKindEl.textContent = inferKind();
+        }
+        if (statElementsEl) {
+          statElementsEl.textContent = String(mesh.elements.length);
+        }
+        if (statNodesEl) {
+          statNodesEl.textContent = String(mesh.nodes.length);
+        }
+        if (statLevelsEl) {
+          statLevelsEl.textContent = stats.levels.length > 0 ? stats.levels.join(",") : "0";
+        }
+        if (statTransitionsEl) {
+          statTransitionsEl.textContent = String(stats.transitionCells);
+        }
+        if (statWorkerEl) {
+          statWorkerEl.textContent = workerStatus;
+        }
       }
 
       function updateReport() {
@@ -4555,6 +5476,15 @@
             );
           }
         }
+        if (q1OperationPreview) {
+          lines.push(
+            "",
+            "2D operation preview:",
+            `operation: ${q1OperationPreview.label}`,
+            `preview elements: ${q1OperationPreview.mesh.elements.length}`,
+            ...q1OperationPreview.summary
+          );
+        }
         if (!preview && lastPreparation?.warning) {
           lines.push(
             "",
@@ -4595,24 +5525,7 @@
         const drawStart = performance.now();
         resizeCanvas();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const backgroundGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        backgroundGradient.addColorStop(0, cssVar("--viewport-top"));
-        backgroundGradient.addColorStop(0.55, cssVar("--viewport-mid"));
-        backgroundGradient.addColorStop(1, cssVar("--viewport-bottom"));
-        ctx.fillStyle = backgroundGradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const glow = ctx.createRadialGradient(
-          canvas.width * 0.18,
-          canvas.height * 0.16,
-          0,
-          canvas.width * 0.18,
-          canvas.height * 0.16,
-          Math.max(canvas.width, canvas.height) * 0.34
-        );
-        glow.addColorStop(0, cssVar("--viewport-glow"));
-        glow.addColorStop(1, cssVar("--viewport-glow-transparent"));
-        ctx.fillStyle = glow;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        fillCanvasBackground();
         clearWebglLayer();
         const previewRoles = previewRoleMap();
         performanceStats.skippedTinyEdges = 0;
@@ -4633,6 +5546,7 @@
             drawUltraElementPoints(previewRoles, surfaceItems, renderStride);
           }
           drawBcFaceOverlay();
+          drawQ1OperationPreviewOverlay();
           drawSelectedNodes();
           drawCoordinateAxesOverlay();
           drawModelRulersOverlay();
@@ -4686,6 +5600,7 @@
             drawSelectedWireframes(previewRoles);
           }
           drawBcFaceOverlay();
+          drawQ1OperationPreviewOverlay();
           drawSelectedNodes();
           drawCoordinateAxesOverlay();
           drawModelRulersOverlay();
@@ -4739,6 +5654,7 @@
           }
         }
         drawBcFaceOverlay();
+        drawQ1OperationPreviewOverlay();
         drawSelectedNodes();
         drawCoordinateAxesOverlay();
         drawModelRulersOverlay();
@@ -5714,6 +6630,44 @@
         drawAllBcFaceOverlay();
       }
 
+      function drawQ1OperationPreviewOverlay() {
+        if (!q1OperationPreview || inferKind() !== "Q1") {
+          return;
+        }
+        const previewMesh = q1OperationPreview.mesh;
+        const elementIds = q1OperationPreview.generatedElementIds ?? [];
+        if (!previewMesh || elementIds.length === 0) {
+          return;
+        }
+        const stride = Math.max(1, Math.ceil(elementIds.length / 5000));
+        ctx.save();
+        ctx.fillStyle = "rgba(49, 214, 190, 0.20)";
+        ctx.strokeStyle = "rgba(55, 235, 210, 0.95)";
+        ctx.lineWidth = 1.4;
+        for (let index = 0; index < elementIds.length; index += stride) {
+          const element = previewMesh.elements[elementIds[index] - 1];
+          if (!element) {
+            continue;
+          }
+          const points = element
+            .map((nodeId) => previewMesh.nodes[nodeId - 1])
+            .filter(Boolean)
+            .map((node) => projectPoint(toPoint3(node)));
+          if (points.length < 3) {
+            continue;
+          }
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let pointIndex = 1; pointIndex < points.length; pointIndex += 1) {
+            ctx.lineTo(points[pointIndex].x, points[pointIndex].y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
       function drawAllBcFaceOverlay() {
         const records = surfaceFaceRecordsForCurrentVisibility();
         if (records.sourceFaceCount === 0) {
@@ -6220,6 +7174,7 @@
       function finalizeSelectionInteraction(commandKind, payload, successMessage, options = {}) {
         const focused = !options.skipRecursiveFocus && applyRecursiveFocusSelection();
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         recordCommand(commandKind, {
@@ -6361,7 +7316,14 @@
       function handlePickClick(point, event) {
         const elementId = pickCellAtScreenPoint(point);
         if (!elementId) {
-          setStatus(hidePickEnabled ? "No visible cell picked to hide." : "No visible cell picked.", false);
+          setStatus(selectCellSetPickEnabled ? "No visible 2D cell picked for set selection." : hidePickEnabled ? "No visible cell picked to hide." : "No visible cell picked.", false);
+          return;
+        }
+        if (selectCellSetPickEnabled) {
+          const selectedSet = selectCellSetContainingElement(elementId, point);
+          if (selectedSet) {
+            setSelectCellSetPickEnabled(false);
+          }
           return;
         }
         if (hidePickEnabled) {
@@ -6708,6 +7670,7 @@
         selected = new Set();
         selectedNodes = new Set();
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         recordCommand("select.clear", {
@@ -6780,6 +7743,7 @@
       function clearSelectionDerivedStateAfterVisibilityChange() {
         selected = new Set();
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         surfaceItems = [];
@@ -7069,12 +8033,6 @@
         }
       });
       document.querySelector("#generate").addEventListener("click", createMesh);
-      document.querySelector("#grid-from-dx").addEventListener("click", () => {
-        syncGridFromDx();
-        recordCommand("grid.counts-from-dx", currentGridCommandPayload());
-        updateReport();
-        setStatus(`Grid counts updated to ${nxEl.value} x ${nyEl.value} x ${nzEl.value}.`, true);
-      });
       zoomBoxToolButton.addEventListener("click", () => {
         setTool("zoom-box");
         setStatus("Drag a rectangle to zoom to that region.", true);
@@ -7086,6 +8044,11 @@
       document.querySelector("#preview-refine").addEventListener("click", previewSelection);
       document.querySelector("#apply-refine").addEventListener("click", applyRefine);
       document.querySelector("#delete-elements").addEventListener("click", deleteSelectedElements);
+      previewBoundaryLayerButton.addEventListener("click", previewQ1BoundaryLayerGrow);
+      growBoundaryLayerButton.addEventListener("click", applyQ1BoundaryLayerGrow);
+      autoTemplateButton.addEventListener("click", autoAdjustQ1TemplateParameters);
+      previewTemplateButton.addEventListener("click", previewQ1RectangleCircleTemplate);
+      replaceTemplateButton.addEventListener("click", applyQ1RectangleCircleTemplate);
       undoButton.addEventListener("click", undoRefineCommand);
       redoButton.addEventListener("click", redoRefineCommand);
       document.querySelector("#select-box").addEventListener("click", () => void selectByCoordinateBox("add"));
@@ -7107,6 +8070,7 @@
           );
         }
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         recordCommand("select.all", {
@@ -7140,6 +8104,7 @@
           selected = next;
         }
         preview = null;
+        q1OperationPreview = null;
         lastResult = null;
         lastPreparation = null;
         recordCommand("select.invert", {
@@ -7154,6 +8119,12 @@
       themeModeEl.addEventListener("change", () => {
         applyTheme(themeModeEl.value);
       });
+      canvasBgColorEl.addEventListener("input", () => {
+        applyCanvasBackground(canvasBgColorEl.value);
+      });
+      canvasBgColorEl.addEventListener("change", () => {
+        applyCanvasBackground(canvasBgColorEl.value);
+      });
       document.querySelector("#export-vtk").addEventListener("click", exportVtk);
       exportInpButton.addEventListener("click", exportInp);
       exportOfflineButton.addEventListener("click", exportOfflineJob);
@@ -7164,6 +8135,7 @@
       meshFileEl.addEventListener("change", () => importMeshFile(meshFileEl.files?.[0]));
       scriptFileEl.addEventListener("change", () => importCommandScriptFile(scriptFileEl.files?.[0]));
       clearScriptButton.addEventListener("click", clearCommandScript);
+      selectCellSetButton.addEventListener("click", armSelectCellSetByPick);
       saveNodeSetButton.addEventListener("click", saveCurrentNodeSet);
       saveCellSetButton.addEventListener("click", saveCurrentCellSet);
       assignMaterialButton.addEventListener("click", assignMaterialToCellSet);
@@ -7263,8 +8235,10 @@
       viewYzPlusButton.addEventListener("click", () => setParallelPlaneView("yz", "+"));
       viewYzMinusButton.addEventListener("click", () => setParallelPlaneView("yz", "-"));
       projectionToggleButton.addEventListener("click", toggleProjectionMode);
+      kindH1Button.addEventListener("click", () => setElementKind("H1"));
+      kindQ1Button.addEventListener("click", () => setElementKind("Q1"));
       kindEl.addEventListener("change", () => {
-        activeTool = kindEl.value === "Q1" ? "select" : "rotate";
+        setTool(kindEl.value === "Q1" ? "select" : "rotate");
         syncKindControls();
         createMesh();
       });
@@ -7272,6 +8246,12 @@
 
       function syncKindControls() {
         const isQ1 = kindEl.value === "Q1";
+        kindH1Button?.setAttribute("aria-pressed", String(!isQ1));
+        kindQ1Button?.setAttribute("aria-pressed", String(isQ1));
+        q1ToolsSection.hidden = !isQ1;
+        if (!isQ1 && selectCellSetPickEnabled) {
+          setSelectCellSetPickEnabled(false);
+        }
         nzEl.disabled = isQ1;
         modelZMinEl.disabled = isQ1;
         modelZMaxEl.disabled = isQ1;
@@ -7282,7 +8262,7 @@
           if (recursiveFocusEnabled) {
             restoreRecursiveFocusDisplay();
           }
-        } else if (activeTool === "select") {
+        } else if (isSelectionTool(activeTool)) {
           setTool("rotate");
         }
         regularizeEl.disabled = isQ1;
@@ -7294,6 +8274,31 @@
           boxZMinEl.value = "0.25";
           boxZMaxEl.value = "0.75";
         }
+        [
+          previewBoundaryLayerButton,
+          growBoundaryLayerButton,
+          autoTemplateButton,
+          previewTemplateButton,
+          replaceTemplateButton,
+          selectCellSetButton,
+          blHeightEl,
+          blIncrementsEl,
+          blGrowthRatioEl,
+          blNodeArrangementEl,
+          blScaleModeEl,
+          tplInnerSquareEl,
+          tplInnerCircleEl,
+          tplOuterCircleEl,
+          tplInnerRadiusEl,
+          tplOuterRadiusEl,
+          tplN1El,
+          tplN2El,
+          tplN3El,
+          tplIrregularBiasEl,
+          tplOmitCoreEl
+        ].forEach((control) => {
+          control.disabled = !isQ1;
+        });
         syncSliceControls();
         syncExportKindOptions();
       }
@@ -7303,17 +8308,29 @@
         syncKindControls();
       }
 
+      function setElementKind(value) {
+        const nextKind = value === "Q1" ? "Q1" : "H1";
+        if (kindEl.value === nextKind) {
+          syncKindControls();
+          return;
+        }
+        kindEl.value = nextKind;
+        kindEl.dispatchEvent(new Event("change"));
+      }
+
       syncKindControls();
       syncExportKindOptions();
       setMiddleBox();
       syncProjectionToggle();
       initializeTheme();
+      initializeCanvasBackground();
       initializeHelpLanguage();
       resizeCanvas();
       fitCameraToMesh();
       setTool(activeTool);
       syncRecursiveFocusButton();
       syncHidePickButton();
+      syncSelectCellSetPickButton();
       syncBcFaceToggle();
       resetCommandScript("initial");
       updateReport();

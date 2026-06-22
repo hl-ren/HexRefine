@@ -53,6 +53,8 @@ function buildStandaloneHtml(html, importMap) {
         prepareExportMesh,
         prepareSessionRefineSelection,
         previewRefinementByElementIds,
+        growQ1BoundaryLayer,
+        replaceQ1BlockWithRectangleCircleTemplate,
         refineSessionPatch,
         regularizeHexSelection,
         replayHexRefineCommandScript,

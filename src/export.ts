@@ -57,6 +57,24 @@ export interface InpOptions {
   title?: string;
   elementKind?: ExportTargetKind;
   materials?: InpMaterialEntries;
+  includeBoundarySets?: boolean;
+}
+
+interface BoundaryInpSets {
+  cellSets: Map<string, number[]>;
+  nodeSets: Map<string, number[]>;
+}
+
+interface BoundaryTemplate {
+  match: readonly number[];
+  nodes: readonly number[];
+}
+
+interface BoundaryRecord {
+  elementId: number;
+  nodeIds: number[];
+  matchNodeIds: number[];
+  side: string;
 }
 
 const H1_EXPORT_EDGES: readonly [number, number][] = [
@@ -313,6 +331,12 @@ export function* iterateNativeSessionInpLines(
 ): Generator<string> {
   const materialBySet = normalizeMaterialEntries(options.materials);
   const spec = nativeSessionVtkSpec(plan.kind);
+  const elements = plan.activeCellIds.map((cellId) => nativeSessionMappedElement(plan, cellId, spec.expectedNodeCount));
+  const sets = withAutomaticBoundarySetsForInp({
+    kind: plan.kind,
+    nodes: plan.nodes,
+    elements
+  }, plan.sets, options);
   yield "*Heading";
   yield sanitizeTitle(options.title ?? "HexRefine mesh");
   yield "*Node";
@@ -323,14 +347,13 @@ export function* iterateNativeSessionInpLines(
   }
 
   yield `*Element, type=${inpElementType(plan.kind)}`;
-  for (let index = 0; index < plan.activeCellIds.length; index += 1) {
-    const element = nativeSessionMappedElement(plan, plan.activeCellIds[index]!, spec.expectedNodeCount);
-    yield `${index + 1}, ${element.join(", ")}`;
+  for (let index = 0; index < elements.length; index += 1) {
+    yield `${index + 1}, ${elements[index]!.join(", ")}`;
   }
 
-  yield* iterateInpSets("Nset", plan.sets.nodeSets);
-  yield* iterateInpSets("Elset", plan.sets.cellSets);
-  for (const [setName] of plan.sets.cellSets) {
+  yield* iterateInpSets("Nset", sets.nodeSets);
+  yield* iterateInpSets("Elset", sets.cellSets);
+  for (const [setName] of sets.cellSets) {
     const material = materialBySet.get(setName);
     if (!material) {
       continue;
@@ -350,6 +373,7 @@ export function* iteratePreparedInpLines(
 ): Generator<string> {
   const elementKind = prepared.mesh.kind;
   const materialBySet = normalizeMaterialEntries(options.materials);
+  const sets = withAutomaticBoundarySetsForInp(prepared.mesh, prepared.sets, options);
   yield "*Heading";
   yield sanitizeTitle(options.title ?? "HexRefine mesh");
   yield "*Node";
@@ -364,9 +388,9 @@ export function* iteratePreparedInpLines(
     yield `${index + 1}, ${prepared.mesh.elements[index]!.join(", ")}`;
   }
 
-  yield* iterateInpSets("Nset", prepared.sets.nodeSets);
-  yield* iterateInpSets("Elset", prepared.sets.cellSets);
-  for (const [setName] of prepared.sets.cellSets) {
+  yield* iterateInpSets("Nset", sets.nodeSets);
+  yield* iterateInpSets("Elset", sets.cellSets);
+  for (const [setName] of sets.cellSets) {
     const material = materialBySet.get(setName);
     if (!material) {
       continue;
@@ -564,6 +588,258 @@ function averagePoints(points: readonly Point[]): Point {
   }
   const averaged = sums.map((sum) => sum / points.length);
   return averaged.slice(0, dimension);
+}
+
+function withAutomaticBoundarySetsForInp(
+  mesh: ExportMesh,
+  sets: ActiveMeshSetRemapResult,
+  options: InpOptions
+): BoundaryInpSets {
+  const cellSets = cloneNumberMap(sets.cellSets);
+  const nodeSets = cloneNumberMap(sets.nodeSets);
+  if (options.includeBoundarySets === false) {
+    return { cellSets, nodeSets };
+  }
+
+  const boundarySets = buildAutomaticBoundaryInpSets(mesh);
+  for (const [name, ids] of boundarySets.cellSets) {
+    cellSets.set(uniqueInpSetName(name, cellSets, nodeSets), ids);
+  }
+  for (const [name, ids] of boundarySets.nodeSets) {
+    nodeSets.set(uniqueInpSetName(name, cellSets, nodeSets), ids);
+  }
+  return { cellSets, nodeSets };
+}
+
+function buildAutomaticBoundaryInpSets(mesh: ExportMesh): BoundaryInpSets {
+  const records = exteriorBoundaryRecords(mesh);
+  const recordsBySide = groupBy(records, (record) => record.side);
+  const cellSets = new Map<string, number[]>();
+  const nodeSets = new Map<string, number[]>();
+
+  for (const [side, sideRecords] of [...recordsBySide].sort(([a], [b]) => a.localeCompare(b))) {
+    const components = connectedBoundaryComponents(sideRecords)
+      .sort((a, b) => minimumBoundaryElementId(a) - minimumBoundaryElementId(b));
+    components.forEach((component, index) => {
+      const suffix = `${side}_${index + 1}`;
+      const elementIds = uniqueSortedNumbers(component.map((record) => record.elementId));
+      const nodeIds = uniqueSortedNumbers(component.flatMap((record) => record.nodeIds));
+      cellSets.set(`AUTO_BND_${suffix}_EL`, elementIds);
+      nodeSets.set(`AUTO_BND_${suffix}_N`, nodeIds);
+    });
+  }
+
+  return { cellSets, nodeSets };
+}
+
+function exteriorBoundaryRecords(mesh: ExportMesh): BoundaryRecord[] {
+  const templates = boundaryTemplatesForExportKind(mesh.kind);
+  const ownersByKey = new Map<string, BoundaryRecord[]>();
+  mesh.elements.forEach((element, elementIndex) => {
+    const elementId = elementIndex + 1;
+    const elementCenter = averagePoints(element.map((nodeId) => mesh.nodes[nodeId - 1]!));
+    for (const template of templates) {
+      const matchNodeIds = template.match.map((localIndex) => element[localIndex]!);
+      const nodeIds = template.nodes.map((localIndex) => element[localIndex]!);
+      const boundaryCenter = averagePoints(nodeIds.map((nodeId) => mesh.nodes[nodeId - 1]!));
+      const normal = orientedBoundaryNormal(mesh, element, template, elementCenter, boundaryCenter);
+      const side = boundarySideName(normal);
+      const key = boundaryKeyFromNodeIds(matchNodeIds);
+      const owners = ownersByKey.get(key) ?? [];
+      owners.push({ elementId, nodeIds, matchNodeIds, side });
+      ownersByKey.set(key, owners);
+    }
+  });
+
+  const records: BoundaryRecord[] = [];
+  for (const owners of ownersByKey.values()) {
+    if (owners.length === 1) {
+      records.push(owners[0]!);
+    }
+  }
+  return records;
+}
+
+function boundaryTemplatesForExportKind(kind: ExportElementKind): BoundaryTemplate[] {
+  switch (kind) {
+    case "T3":
+      return [
+        { match: [0, 1], nodes: [0, 1] },
+        { match: [1, 2], nodes: [1, 2] },
+        { match: [2, 0], nodes: [2, 0] }
+      ];
+    case "Q4":
+      return [
+        { match: [0, 1], nodes: [0, 1] },
+        { match: [1, 2], nodes: [1, 2] },
+        { match: [2, 3], nodes: [2, 3] },
+        { match: [3, 0], nodes: [3, 0] }
+      ];
+    case "Q9":
+      return [
+        { match: [0, 1, 4], nodes: [0, 1, 4] },
+        { match: [1, 2, 5], nodes: [1, 2, 5] },
+        { match: [2, 3, 6], nodes: [2, 3, 6] },
+        { match: [3, 0, 7], nodes: [3, 0, 7] }
+      ];
+    case "H8":
+      return [
+        { match: [0, 1, 2, 3], nodes: [0, 1, 2, 3] },
+        { match: [4, 5, 6, 7], nodes: [4, 5, 6, 7] },
+        { match: [0, 4, 5, 1], nodes: [0, 4, 5, 1] },
+        { match: [3, 7, 6, 2], nodes: [3, 7, 6, 2] },
+        { match: [1, 5, 6, 2], nodes: [1, 5, 6, 2] },
+        { match: [0, 4, 7, 3], nodes: [0, 4, 7, 3] }
+      ];
+    case "H20":
+      return [
+        { match: [0, 1, 2, 3, 8, 9, 10, 11], nodes: [0, 1, 2, 3, 8, 9, 10, 11] },
+        { match: [4, 5, 6, 7, 12, 13, 14, 15], nodes: [4, 5, 6, 7, 12, 13, 14, 15] },
+        { match: [0, 4, 5, 1, 16, 12, 17, 8], nodes: [0, 4, 5, 1, 16, 12, 17, 8] },
+        { match: [3, 7, 6, 2, 19, 14, 18, 10], nodes: [3, 7, 6, 2, 19, 14, 18, 10] },
+        { match: [1, 5, 6, 2, 17, 13, 18, 9], nodes: [1, 5, 6, 2, 17, 13, 18, 9] },
+        { match: [0, 4, 7, 3, 16, 15, 19, 11], nodes: [0, 4, 7, 3, 16, 15, 19, 11] }
+      ];
+  }
+}
+
+function orientedBoundaryNormal(
+  mesh: ExportMesh,
+  element: readonly number[],
+  template: BoundaryTemplate,
+  elementCenter: Point,
+  boundaryCenter: Point
+): [number, number, number] {
+  const points = template.nodes.map((localIndex) => toPoint3(mesh.nodes[element[localIndex]! - 1]!));
+  let normal = points.length <= 3
+    ? edgeNormal2(points[0]!, points[1]!)
+    : faceNormal3(points[0]!, points[1]!, points[2]!);
+  const outward = subtract3(toPoint3(boundaryCenter), toPoint3(elementCenter));
+  if (dot3(normal, outward) < 0) {
+    normal = [-normal[0], -normal[1], -normal[2]];
+  }
+  return normal;
+}
+
+function boundarySideName(normal: readonly [number, number, number]): string {
+  const abs = normal.map((value) => Math.abs(value));
+  let axis = 0;
+  if (abs[1]! > abs[axis]!) {
+    axis = 1;
+  }
+  if (abs[2]! > abs[axis]!) {
+    axis = 2;
+  }
+  return `${["X", "Y", "Z"][axis]}${normal[axis]! < 0 ? "MIN" : "MAX"}`;
+}
+
+function connectedBoundaryComponents(records: readonly BoundaryRecord[]): BoundaryRecord[][] {
+  const recordIndicesByNode = new Map<number, number[]>();
+  records.forEach((record, index) => {
+    for (const nodeId of record.matchNodeIds) {
+      const indices = recordIndicesByNode.get(nodeId) ?? [];
+      indices.push(index);
+      recordIndicesByNode.set(nodeId, indices);
+    }
+  });
+
+  const visited = new Set<number>();
+  const components: BoundaryRecord[][] = [];
+  for (let start = 0; start < records.length; start += 1) {
+    if (visited.has(start)) {
+      continue;
+    }
+    const stack = [start];
+    const component: BoundaryRecord[] = [];
+    visited.add(start);
+    while (stack.length > 0) {
+      const index = stack.pop()!;
+      const record = records[index]!;
+      component.push(record);
+      for (const nodeId of record.matchNodeIds) {
+        for (const next of recordIndicesByNode.get(nodeId) ?? []) {
+          if (!visited.has(next)) {
+            visited.add(next);
+            stack.push(next);
+          }
+        }
+      }
+    }
+    components.push(component);
+  }
+  return components;
+}
+
+function minimumBoundaryElementId(records: readonly BoundaryRecord[]): number {
+  return Math.min(...records.map((record) => record.elementId));
+}
+
+function uniqueInpSetName(
+  name: string,
+  cellSets: ReadonlyMap<string, readonly number[]>,
+  nodeSets: ReadonlyMap<string, readonly number[]>
+): string {
+  if (!cellSets.has(name) && !nodeSets.has(name)) {
+    return name;
+  }
+  let index = 2;
+  while (cellSets.has(`${name}_${index}`) || nodeSets.has(`${name}_${index}`)) {
+    index += 1;
+  }
+  return `${name}_${index}`;
+}
+
+function boundaryKeyFromNodeIds(nodeIds: readonly number[]): string {
+  return [...nodeIds].sort((a, b) => a - b).join(":");
+}
+
+function edgeNormal2(a: readonly [number, number, number], b: readonly [number, number, number]): [number, number, number] {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  return normalize3([dy, -dx, 0]);
+}
+
+function faceNormal3(
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+  c: readonly [number, number, number]
+): [number, number, number] {
+  return normalize3(cross3(subtract3(b, a), subtract3(c, a)));
+}
+
+function subtract3(a: readonly [number, number, number], b: readonly [number, number, number]): [number, number, number] {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function cross3(a: readonly [number, number, number], b: readonly [number, number, number]): [number, number, number] {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+}
+
+function dot3(a: readonly [number, number, number], b: readonly [number, number, number]): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function normalize3(vector: readonly [number, number, number]): [number, number, number] {
+  const length = Math.hypot(vector[0], vector[1], vector[2]);
+  if (length <= 1e-14) {
+    return [0, 0, 1];
+  }
+  return [vector[0] / length, vector[1] / length, vector[2] / length];
+}
+
+function groupBy<T, K>(values: readonly T[], keyOf: (value: T) => K): Map<K, T[]> {
+  const groups = new Map<K, T[]>();
+  for (const value of values) {
+    const key = keyOf(value);
+    const group = groups.get(key) ?? [];
+    group.push(value);
+    groups.set(key, group);
+  }
+  return groups;
 }
 
 function appendInpSets(lines: string[], keyword: string, sets: ReadonlyMap<string, readonly number[]>): void {

@@ -52,6 +52,8 @@ const {
   refineSessionCell,
   refineSessionCells,
   refineSessionPatch,
+  growQ1BoundaryLayer,
+  replaceQ1BlockWithRectangleCircleTemplate,
   undoRefinementSession
 } = api;
 
@@ -538,6 +540,158 @@ test("HexRefine command script can replay delete undo and redo", () => {
   assert.equal(replay.warnings.length, 0);
   assert.equal(replay.mesh.elements.length, 2);
   assert.equal(checkNoHangingNodes(replay.mesh).ok, true);
+});
+
+test("HexRefine command script remaps surviving cell sets after delete", () => {
+  const replay = replayHexRefineCommandScript({
+    commands: [
+      {
+        kind: "grid.generate",
+        payload: {
+          kind: "H1",
+          nx: 3,
+          ny: 1,
+          nz: 1,
+          bounds: { min: [0, 0, 0], max: [3, 1, 1] },
+          mergeTolerance: 1e-9
+        }
+      },
+      {
+        kind: "set.cells.save",
+        payload: {
+          name: "DELETE_ME",
+          cellIds: ["e1"]
+        }
+      },
+      {
+        kind: "set.cells.save",
+        payload: {
+          name: "KEEP_ME",
+          cellIds: ["e3"]
+        }
+      },
+      {
+        kind: "delete.elements",
+        payload: {
+          mode: "delete",
+          elementIds: [1],
+          deletedElementCount: 1,
+          sourceElementCount: 3
+        }
+      }
+    ]
+  });
+
+  assert.equal(replay.mesh.elements.length, 2);
+  assert.equal(replay.cellSets.has("DELETE_ME"), false);
+  assert.deepEqual(replay.cellSets.get("KEEP_ME"), ["e2"]);
+});
+
+test("HexRefine command script can replay Q1 mesh-operation undo, redo, and set selection", () => {
+  const replay = replayHexRefineCommandScript({
+    commands: [
+      {
+        kind: "grid.generate",
+        payload: {
+          kind: "Q1",
+          nx: 2,
+          ny: 2,
+          bounds: { min: [0, 0, 0], max: [1, 1, 0] },
+          mergeTolerance: 1e-9
+        }
+      },
+      {
+        kind: "mesh.boundary-layer-grow",
+        payload: {
+          elementIds: [1, 2, 3, 4],
+          height: 0.1,
+          increments: 1,
+          growthRatio: 1,
+          nodeArrangement: 1,
+          scaleMode: "none",
+          setPrefix: "BL1"
+        }
+      },
+      {
+        kind: "undo.mesh-operation"
+      },
+      {
+        kind: "redo.mesh-operation"
+      },
+      {
+        kind: "select.cell-set",
+        payload: {
+          name: "BL1_ALL"
+        }
+      },
+      {
+        kind: "set.cells.save",
+        payload: {
+          name: "SELECTED_BL"
+        }
+      }
+    ]
+  }, { selectionStrategy: "replay" });
+
+  assert.equal(replay.replayedCommandCount, 6);
+  assert.equal(replay.warnings.length, 0);
+  assert.equal(replay.mesh.kind, "Q1");
+  assert.equal(replay.mesh.elements.length, 12);
+  assert.deepEqual(replay.cellSets.get("SELECTED_BL"), replay.cellSets.get("BL1_ALL"));
+  assert.equal(replay.cellSets.get("SELECTED_BL").length, 8);
+  assert.equal(checkNoHangingNodes(replay.mesh, 1e-9).ok, true);
+});
+
+test("HexRefine command script preserves cell sets through Q1 template replacement", () => {
+  const replay = replayHexRefineCommandScript({
+    commands: [
+      {
+        kind: "grid.generate",
+        payload: {
+          kind: "Q1",
+          nx: 4,
+          ny: 4,
+          bounds: { min: [0, 0, 0], max: [1, 1, 0] },
+          mergeTolerance: 1e-9
+        }
+      },
+      {
+        kind: "set.cells.save",
+        payload: {
+          name: "UNCHANGED",
+          cellIds: ["e1"]
+        }
+      },
+      {
+        kind: "set.cells.save",
+        payload: {
+          name: "REPLACED",
+          cellIds: ["e6"]
+        }
+      },
+      {
+        kind: "mesh.template-rectangle-circle",
+        payload: {
+          elementIds: [6, 7, 10, 11],
+          innerSquareRatio: 0.24,
+          innerCircleRatio: 0.42,
+          outerCircleRatio: 0.7,
+          squareToCircleLayers: 1,
+          annulusLayers: 1,
+          circleToSquareLayers: 1,
+          omitCore: true,
+          setPrefix: "TPL"
+        }
+      }
+    ]
+  });
+
+  assert.deepEqual(replay.cellSets.get("UNCHANGED"), ["e1"]);
+  assert.ok(replay.cellSets.get("REPLACED").length > 1);
+  assert.deepEqual(replay.cellSets.get("REPLACED"), replay.cellSets.get("TPL_ALL"));
+  assert.deepEqual(replay.cellSets.get("TPL_CORE"), []);
+  assert.deepEqual(replay.cellSets.get("TPL_SQUARE_CIRCLE"), []);
+  assert.equal(checkNoHangingNodes(replay.mesh, 1e-9).ok, true);
 });
 
 test("HexRefine command script can replay coordinate-box selection on a denser offline grid", () => {
@@ -1576,6 +1730,265 @@ test("Q1 mesh refinement adds transition elements on the boundary", () => {
   assert.equal(checkNoHangingNodes(refined).ok, true);
 });
 
+test("Q1 boundary layer grow appends offset layers from selected boundary cells", () => {
+  const mesh = createQ1UnitSquareMesh(2, 2);
+  const result = growQ1BoundaryLayer(mesh, [1, 2], {
+    height: 0.25,
+    increments: 2
+  });
+
+  assert.equal(result.boundaryEdgeCount, 4);
+  assert.equal(result.layerElementIds.length, 2);
+  assert.equal(result.generatedElementIds.length, 8);
+  assert.equal(result.mesh.elements.length, mesh.elements.length + 8);
+  assert.equal(checkNoHangingNodes(result.mesh, 1e-9).ok, true);
+});
+
+test("Q1 boundary layer grow supports boundary node arrangement bias", () => {
+  const mesh = createQ1UnitSquareMesh(4, 1);
+  const selected = [1, 2, 3, 4];
+  const equal = growQ1BoundaryLayer(mesh, selected, {
+    height: 0.1,
+    increments: 1,
+    nodeArrangement: 1
+  });
+  const corner = growQ1BoundaryLayer(mesh, selected, {
+    height: 0.1,
+    increments: 1,
+    nodeArrangement: 0.5
+  });
+  const center = growQ1BoundaryLayer(mesh, selected, {
+    height: 0.1,
+    increments: 1,
+    nodeArrangement: 2
+  });
+
+  const equalTop = topBoundaryXs(equal.mesh);
+  const cornerTop = topBoundaryXs(corner.mesh);
+  const centerTop = topBoundaryXs(center.mesh);
+  assert.equal(equalTop.length, 5);
+  assert.equal(cornerTop.length, 5);
+  assert.equal(centerTop.length, 5);
+  assert.ok(cornerTop[1] - cornerTop[0] < equalTop[1] - equalTop[0]);
+  assert.ok(centerTop[1] - centerTop[0] > equalTop[1] - equalTop[0]);
+});
+
+test("Q1 boundary layer grow can fit back to the original boundary or preserve area", () => {
+  const mesh = createQ1UnitSquareMesh(2, 2);
+  const all = [1, 2, 3, 4];
+  const fitted = growQ1BoundaryLayer(mesh, all, {
+    height: 0.25,
+    increments: 1,
+    scaleMode: "fit-bounds"
+  });
+  const sameArea = growQ1BoundaryLayer(mesh, all, {
+    height: 0.25,
+    increments: 1,
+    scaleMode: "preserve-area"
+  });
+
+  assert.deepEqual(q1Bounds(fitted.mesh), q1Bounds(mesh));
+  assert.ok(Math.abs(q1Area(sameArea.mesh) - q1Area(mesh)) < 1e-10);
+});
+
+test("Q1 rectangle-circle template replacement creates selectable region sets", () => {
+  const mesh = createQ1UnitSquareMesh(4, 4);
+  const selected = idsInIndexBlock(4, 4, 1, [1, 1, 0], [2, 2, 0]);
+  const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, selected, {
+    squareToCircleLayers: 1,
+    annulusLayers: 2,
+    circleToSquareLayers: 1
+  });
+  const regionCount = Object.values(result.regionElementIds)
+    .reduce((total, ids) => total + ids.length, 0);
+
+  assert.deepEqual(result.blockDimensions, [2, 2]);
+  assert.equal(result.replacedElementIds.length, 4);
+  assert.equal(regionCount, result.generatedElementIds.length);
+  assert.ok(result.regionElementIds.core.length > 0);
+  assert.ok(result.regionElementIds.annulus.length > 0);
+  assert.equal(checkNoHangingNodes(result.mesh, 1e-9).ok, true);
+});
+
+test("Q1 rectangle-circle template replacement accepts a deformed topological block", () => {
+  const base = createQ1UnitSquareMesh(3, 2);
+  const mesh = {
+    ...base,
+    nodes: base.nodes.map(([x, y]) => [
+      x + 0.35 * y,
+      0.18 * x + 1.1 * y
+    ])
+  };
+  const selected = mesh.elements.map((_, index) => index + 1);
+  const originalBoundaryNodes = [1, 2, 3, 4, 8, 12, 11, 10, 9, 5];
+  const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, selected, {
+    squareToCircleLayers: 1,
+    annulusLayers: 2,
+    circleToSquareLayers: 1
+  });
+
+  assert.deepEqual(result.blockDimensions, [3, 2]);
+  assert.equal(result.replacedElementIds.length, 6);
+  for (const nodeId of originalBoundaryNodes) {
+    const original = mesh.nodes[nodeId - 1];
+    assert.ok(result.mesh.nodes.some((point) =>
+      Math.hypot(point[0] - original[0], point[1] - original[1]) < 1e-9
+    ));
+  }
+  assert.equal(checkNoHangingNodes(result.mesh, 1e-9).ok, true);
+});
+
+test("Q1 rectangle-circle template keeps annulus radii regular on a deformed block", () => {
+  const base = createQ1UnitSquareMesh(3, 2);
+  const mesh = {
+    ...base,
+    nodes: base.nodes.map(([x, y]) => [
+      x + 0.35 * y,
+      0.18 * x + 1.1 * y
+    ])
+  };
+  const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, mesh.elements.map((_, index) => index + 1), {
+    innerCircleRatio: 0.35,
+    outerCircleRatio: 0.55,
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1,
+    omitCore: true
+  });
+  const annulusNodeIds = new Set(result.regionElementIds.annulus.flatMap((elementId) => result.mesh.elements[elementId - 1]));
+  const center = [0.675, 0.64];
+  const axisU = [0.5, 0.09];
+  const axisV = [0.175, 0.55];
+  const determinant = axisU[0] * axisV[1] - axisV[0] * axisU[1];
+  const radii = [...annulusNodeIds].map((nodeId) => {
+    const point = result.mesh.nodes[nodeId - 1];
+    const dx = point[0] - center[0];
+    const dy = point[1] - center[1];
+    const u = (dx * axisV[1] - axisV[0] * dy) / determinant;
+    const v = (axisU[0] * dy - dx * axisU[1]) / determinant;
+    return Math.hypot(u, v);
+  });
+
+  assert.ok(radii.every((radius) =>
+    Math.abs(radius - 0.35) < 1e-10 || Math.abs(radius - 0.55) < 1e-10
+  ));
+  assert.equal(checkNoHangingNodes(result.mesh, 1e-9).ok, true);
+});
+
+test("Q1 rectangle-circle template shifts ring away from a non-smooth block side", () => {
+  const base = createQ1UnitSquareMesh(3, 2);
+  const mesh = {
+    ...base,
+    nodes: base.nodes.map((point, index) => index === 4 ? [-0.5, point[1]] : point)
+  };
+  const options = {
+    innerCircleRatio: 0.35,
+    outerCircleRatio: 0.55,
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1,
+    omitCore: true
+  };
+  const unbiased = replaceQ1BlockWithRectangleCircleTemplate(mesh, mesh.elements.map((_, index) => index + 1), {
+    ...options,
+    irregularBoundaryBias: 0
+  });
+  const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, mesh.elements.map((_, index) => index + 1), options);
+  const averageAnnulusX = (replacement) => {
+    const annulusNodeIds = new Set(replacement.regionElementIds.annulus.flatMap((elementId) => replacement.mesh.elements[elementId - 1]));
+    return [...annulusNodeIds]
+      .reduce((total, nodeId) => total + replacement.mesh.nodes[nodeId - 1][0], 0) / annulusNodeIds.size;
+  };
+  const unbiasedAverageX = averageAnnulusX(unbiased);
+  const averageX = averageAnnulusX(result);
+
+  assert.ok(averageX > unbiasedAverageX + 0.03);
+  assert.ok(averageX > 0.54);
+  assert.equal(checkNoHangingNodes(result.mesh, 1e-9).ok, true);
+});
+
+test("Q1 rectangle-circle template negative irregular bias reverses the shift direction", () => {
+  const base = createQ1UnitSquareMesh(3, 2);
+  const mesh = {
+    ...base,
+    nodes: base.nodes.map((point, index) => index === 4 ? [-0.5, point[1]] : point)
+  };
+  const options = {
+    innerCircleRatio: 0.35,
+    outerCircleRatio: 0.55,
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1,
+    omitCore: true
+  };
+  const unbiased = replaceQ1BlockWithRectangleCircleTemplate(mesh, mesh.elements.map((_, index) => index + 1), {
+    ...options,
+    irregularBoundaryBias: 0
+  });
+  const reversed = replaceQ1BlockWithRectangleCircleTemplate(mesh, mesh.elements.map((_, index) => index + 1), {
+    ...options,
+    irregularBoundaryBias: -1
+  });
+  const averageAnnulusX = (replacement) => {
+    const annulusNodeIds = new Set(replacement.regionElementIds.annulus.flatMap((elementId) => replacement.mesh.elements[elementId - 1]));
+    return [...annulusNodeIds]
+      .reduce((total, nodeId) => total + replacement.mesh.nodes[nodeId - 1][0], 0) / annulusNodeIds.size;
+  };
+
+  assert.ok(averageAnnulusX(reversed) < averageAnnulusX(unbiased) - 0.03);
+  assert.equal(checkNoHangingNodes(reversed.mesh, 1e-9).ok, true);
+});
+
+test("Q1 rectangle-circle template accepts absolute ring radii in model units", () => {
+  const mesh = createQ1UnitSquareMesh(4, 4);
+  const selected = idsInIndexBlock(4, 4, 1, [0, 0, 0], [3, 3, 0]);
+  const result = replaceQ1BlockWithRectangleCircleTemplate(mesh, selected, {
+    innerCircleRadius: 0.2,
+    outerCircleRadius: 0.3,
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1
+  });
+  const center = [0.5, 0.5];
+  const radii = result.mesh.nodes.map((point) => Math.hypot(point[0] - center[0], point[1] - center[1]));
+
+  assert.ok(radii.some((radius) => Math.abs(radius - 0.2) < 1e-10));
+  assert.ok(radii.some((radius) => Math.abs(radius - 0.3) < 1e-10));
+});
+
+test("Q1 rectangle-circle template can omit the filled core and internal transition", () => {
+  const mesh = createQ1UnitSquareMesh(4, 4);
+  const selected = idsInIndexBlock(4, 4, 1, [1, 1, 0], [2, 2, 0]);
+  const filled = replaceQ1BlockWithRectangleCircleTemplate(mesh, selected, {
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1
+  });
+  const ringOnly = replaceQ1BlockWithRectangleCircleTemplate(mesh, selected, {
+    squareToCircleLayers: 1,
+    annulusLayers: 1,
+    circleToSquareLayers: 1,
+    omitCore: true
+  });
+  const ringCount = ringOnly.regionElementIds.annulus.length
+    + ringOnly.regionElementIds.circleToSquare.length;
+  const generatedNodeIds = new Set(
+    ringOnly.generatedElementIds.flatMap((elementId) => ringOnly.mesh.elements[elementId - 1])
+  );
+  const center = [0.5, 0.5];
+  const minGeneratedRadius = Math.min(...[...generatedNodeIds].map((nodeId) => {
+    const point = ringOnly.mesh.nodes[nodeId - 1];
+    return Math.hypot(point[0] - center[0], point[1] - center[1]);
+  }));
+
+  assert.equal(ringOnly.regionElementIds.core.length, 0);
+  assert.equal(ringOnly.regionElementIds.squareToCircle.length, 0);
+  assert.equal(ringOnly.generatedElementIds.length, ringCount);
+  assert.equal(filled.generatedElementIds.length - ringOnly.generatedElementIds.length, 12);
+  assert.ok(Math.abs(minGeneratedRadius - 0.1125) < 1e-10);
+  assert.equal(checkNoHangingNodes(ringOnly.mesh, 1e-9).ok, true);
+});
+
 test("Hex mesh refinement adds face transition elements on the boundary", () => {
   const nodes = [
     [0, 0, 0],
@@ -1807,6 +2220,36 @@ function countBy(values) {
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return counts;
+}
+
+function q1Area(mesh) {
+  return mesh.elements.reduce((total, element) => {
+    const points = element.map((nodeId) => mesh.nodes[nodeId - 1]);
+    let twiceArea = 0;
+    for (let index = 0; index < points.length; index += 1) {
+      const a = points[index];
+      const b = points[(index + 1) % points.length];
+      twiceArea += a[0] * b[1] - b[0] * a[1];
+    }
+    return total + Math.abs(twiceArea * 0.5);
+  }, 0);
+}
+
+function topBoundaryXs(mesh) {
+  const maxY = Math.max(...mesh.nodes.map((point) => point[1]));
+  return mesh.nodes
+    .filter((point) => Math.abs(point[1] - maxY) < 1e-9)
+    .map((point) => point[0])
+    .sort((a, b) => a - b);
+}
+
+function q1Bounds(mesh) {
+  const xs = mesh.nodes.map((point) => point[0]);
+  const ys = mesh.nodes.map((point) => point[1]);
+  return {
+    min: [Math.min(...xs), Math.min(...ys)],
+    max: [Math.max(...xs), Math.max(...ys)]
+  };
 }
 
 function elementIdAt(nx, ny, _nz, i, j, k) {

@@ -10,6 +10,7 @@ import {
 } from "./refinement-session.js";
 import { createHexUnitCubeMesh, createQ1UnitSquareMesh } from "./grid.js";
 import { meshFromSerializable } from "./mesh-io.js";
+import { growQ1BoundaryLayer, replaceQ1BlockWithRectangleCircleTemplate } from "./q1-operations.js";
 import { buildDefaultRefinementReplacements } from "./refinement-planner.js";
 import { prepareSessionRefineSelection } from "./session-selection-prep.js";
 
@@ -245,6 +246,9 @@ function replayCommand(
     case "select.invert":
       replaySelectInvert(state, payload);
       break;
+    case "select.cell-set":
+      replaySelectCellSet(state, payload);
+      break;
     case "select.clear":
       replayClearSelection(state);
       break;
@@ -263,10 +267,18 @@ function replayCommand(
     case "delete.elements":
       replayDeleteElements(state, payload, options);
       break;
+    case "mesh.boundary-layer-grow":
+      replayQ1BoundaryLayerGrow(state, payload, options);
+      break;
+    case "mesh.template-rectangle-circle":
+      replayQ1TemplateRectangleCircle(state, payload, options);
+      break;
     case "undo.delete":
+    case "undo.mesh-operation":
       replayUndoDelete(state, options);
       break;
     case "redo.delete":
+    case "redo.mesh-operation":
       replayRedoDelete(state, options);
       break;
     case "undo.refine":
@@ -512,18 +524,156 @@ function replayDeleteElements(
   });
   state.deleteUndoSnapshots.push(captureReplaySnapshot(state));
   state.deleteRedoSnapshots = [];
-  const elements = mode === "keep"
-    ? active.mesh.elements.filter((_, index) => keptElementIds.has(index + 1))
-    : active.mesh.elements.filter((_, index) => !deletedElementIds.has(index + 1));
+  const keptSourceElementIds = active.mesh.elements
+    .map((_, index) => index + 1)
+    .filter((elementId) => mode === "keep" ? keptElementIds.has(elementId) : !deletedElementIds.has(elementId));
+  const elements = keptSourceElementIds.map((elementId) => active.mesh.elements[elementId - 1]!);
   const mesh = {
     nodes: active.mesh.nodes,
     elements
   };
+  remapReplayCellSetsAfterElementCompaction(state, active, keptSourceElementIds);
   state.session = createRefinementSession(active.mesh.kind ? { ...mesh, kind: active.mesh.kind } : mesh);
-  state.cellSets.clear();
-  state.nodeSets.clear();
-  state.cellSetMaterials.clear();
   resetReplayViewState(state);
+}
+
+function replayQ1BoundaryLayerGrow(
+  state: ReplayState,
+  payload: Record<string, unknown>,
+  options: ReplayComformHexCommandScriptOptions
+): void {
+  const session = requireSession(state);
+  const active = buildActiveMeshWithMap(session, {
+    ...activeBuildOptions(state),
+    includeSessionNodeIdByNodeId: false,
+    includeSessionNodeIdsByNodeId: false
+  });
+  const selectedElementIds = replayUsesSelectionState(options) && state.selectedElementIds.size > 0
+    ? activeElementIdsFromReplaySelectionState(state, active).elementIds
+    : readNumberArray(payload.elementIds);
+  const result = growQ1BoundaryLayer(active.mesh, selectedElementIds, {
+    height: readPositiveNumber(payload.height, 0.1),
+    increments: readPositiveInteger(payload.increments, 3),
+    growthRatio: readPositiveNumber(payload.growthRatio, 1),
+    nodeArrangement: readPositiveNumber(payload.nodeArrangement, 1),
+    scaleMode: readQ1BoundaryLayerScaleMode(payload.scaleMode)
+  });
+  state.deleteUndoSnapshots.push(captureReplaySnapshot(state));
+  state.deleteRedoSnapshots = [];
+  state.session = createRefinementSession(result.mesh);
+  const setPrefix = sanitizeName(readString(payload.setPrefix, "BL")) || "BL";
+  state.cellSets.set(`${setPrefix}_ALL`, result.generatedElementIds.map(baseCellIdFromElementId));
+  result.layerElementIds.forEach((ids, index) => {
+    state.cellSets.set(`${setPrefix}_L${index + 1}`, ids.map(baseCellIdFromElementId));
+  });
+  resetReplayViewState(state);
+}
+
+function replayQ1TemplateRectangleCircle(
+  state: ReplayState,
+  payload: Record<string, unknown>,
+  options: ReplayComformHexCommandScriptOptions
+): void {
+  const session = requireSession(state);
+  const active = buildActiveMeshWithMap(session, {
+    ...activeBuildOptions(state),
+    includeSessionNodeIdByNodeId: false,
+    includeSessionNodeIdsByNodeId: false
+  });
+  const selectedElementIds = replayUsesSelectionState(options) && state.selectedElementIds.size > 0
+    ? activeElementIdsFromReplaySelectionState(state, active).elementIds
+    : readNumberArray(payload.elementIds);
+  const innerCircleRadius = readOptionalPositiveNumber(payload.innerCircleRadius);
+  const outerCircleRadius = readOptionalPositiveNumber(payload.outerCircleRadius);
+  const templateOptions = {
+    innerSquareRatio: readPositiveNumber(payload.innerSquareRatio, 0.28),
+    innerCircleRatio: readPositiveNumber(payload.innerCircleRatio, 0.45),
+    outerCircleRatio: readPositiveNumber(payload.outerCircleRatio, 0.55),
+    squareToCircleLayers: readPositiveInteger(payload.squareToCircleLayers, 2),
+    annulusLayers: readPositiveInteger(payload.annulusLayers, 3),
+    circleToSquareLayers: readPositiveInteger(payload.circleToSquareLayers, 3),
+    irregularBoundaryBias: readNumber(payload.irregularBoundaryBias, 1),
+    omitCore: readBoolean(payload.omitCore, false),
+    ...(state.mergeTolerance !== undefined ? { mergeTolerance: state.mergeTolerance } : {})
+  };
+  const result = replaceQ1BlockWithRectangleCircleTemplate(active.mesh, selectedElementIds, {
+    ...templateOptions,
+    ...(innerCircleRadius === undefined ? {} : { innerCircleRadius }),
+    ...(outerCircleRadius === undefined ? {} : { outerCircleRadius })
+  });
+  state.deleteUndoSnapshots.push(captureReplaySnapshot(state));
+  state.deleteRedoSnapshots = [];
+  remapReplayCellSetsAfterQ1TemplateReplacement(state, active, result);
+  state.session = createRefinementSession(result.mesh);
+  state.nodeSets.clear();
+  const setPrefix = sanitizeName(readString(payload.setPrefix, "RCT")) || "RCT";
+  state.cellSets.set(`${setPrefix}_CORE`, result.regionElementIds.core.map(baseCellIdFromElementId));
+  state.cellSets.set(`${setPrefix}_SQUARE_CIRCLE`, result.regionElementIds.squareToCircle.map(baseCellIdFromElementId));
+  state.cellSets.set(`${setPrefix}_ANNULUS`, result.regionElementIds.annulus.map(baseCellIdFromElementId));
+  state.cellSets.set(`${setPrefix}_CIRCLE_SQUARE`, result.regionElementIds.circleToSquare.map(baseCellIdFromElementId));
+  state.cellSets.set(`${setPrefix}_ALL`, result.generatedElementIds.map(baseCellIdFromElementId));
+  resetReplayViewState(state);
+}
+
+function remapReplayCellSetsAfterElementCompaction(
+  state: ReplayState,
+  active: ActiveMeshBuildResult,
+  keptSourceElementIds: readonly number[]
+): void {
+  const replacementsByOldCellId = new Map<CellId, CellId[]>();
+  keptSourceElementIds.forEach((oldElementId, index) => {
+    const oldCellId = active.cellIdByElementId.get(oldElementId);
+    if (oldCellId) {
+      replacementsByOldCellId.set(oldCellId, [baseCellIdFromElementId(index + 1)]);
+    }
+  });
+  remapReplayCellSetsByCellIdMap(state, replacementsByOldCellId);
+}
+
+function remapReplayCellSetsAfterQ1TemplateReplacement(
+  state: ReplayState,
+  active: ActiveMeshBuildResult,
+  result: ReturnType<typeof replaceQ1BlockWithRectangleCircleTemplate>
+): void {
+  const replaced = new Set(result.replacedElementIds);
+  const generatedCellIds = result.generatedElementIds.map(baseCellIdFromElementId);
+  const replacementsByOldCellId = new Map<CellId, CellId[]>();
+  let nextKeptElementId = 1;
+  for (let oldElementId = 1; oldElementId <= active.mesh.elements.length; oldElementId += 1) {
+    const oldCellId = active.cellIdByElementId.get(oldElementId);
+    if (!oldCellId) {
+      continue;
+    }
+    if (replaced.has(oldElementId)) {
+      replacementsByOldCellId.set(oldCellId, generatedCellIds);
+    } else {
+      replacementsByOldCellId.set(oldCellId, [baseCellIdFromElementId(nextKeptElementId)]);
+      nextKeptElementId += 1;
+    }
+  }
+  remapReplayCellSetsByCellIdMap(state, replacementsByOldCellId);
+}
+
+function remapReplayCellSetsByCellIdMap(
+  state: ReplayState,
+  replacementsByOldCellId: ReadonlyMap<CellId, readonly CellId[]>
+): void {
+  for (const [name, cellIds] of [...state.cellSets]) {
+    const next: CellId[] = [];
+    for (const cellId of cellIds) {
+      const replacements = replacementsByOldCellId.get(cellId);
+      if (replacements) {
+        next.push(...replacements);
+      }
+    }
+    const unique = uniqueStrings(next) as CellId[];
+    if (unique.length > 0) {
+      state.cellSets.set(name, unique);
+    } else {
+      state.cellSets.delete(name);
+      state.cellSetMaterials.delete(name);
+    }
+  }
 }
 
 function replayUndoDelete(
@@ -927,6 +1077,27 @@ function replaySelectInvert(state: ReplayState, payload: Record<string, unknown>
     }
   });
   state.selectedElementIds = next;
+}
+
+function replaySelectCellSet(state: ReplayState, payload: Record<string, unknown>): void {
+  const session = requireSession(state);
+  const name = sanitizeName(readString(payload.name, ""));
+  const cellIds = state.cellSets.get(name) ?? readStringArray(payload.cellIds);
+  if (cellIds.length === 0) {
+    state.selectedElementIds = new Set();
+    state.selectedNodeIds = new Set();
+    return;
+  }
+  const active = buildActiveMeshWithMap(session, {
+    ...activeBuildOptions(state),
+    includeSessionNodeIdByNodeId: false,
+    includeSessionNodeIdsByNodeId: false
+  });
+  const elementIds = cellIds
+    .map((cellId) => active.elementIdByCellId.get(cellId))
+    .filter((elementId): elementId is number => elementId !== undefined && !state.hiddenElementIds.has(elementId));
+  state.selectedElementIds = new Set(elementIds);
+  state.selectedNodeIds = new Set();
 }
 
 function replayClearSelection(state: ReplayState): void {
@@ -1816,6 +1987,34 @@ function readOptionalNumber(value: unknown): number | undefined {
 function readPositiveInteger(value: unknown, fallback: number): number {
   const number = typeof value === "number" ? value : Number(value);
   return Number.isInteger(number) && number > 0 ? number : fallback;
+}
+
+function readPositiveNumber(value: unknown, fallback: number): number {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function readNonnegativeNumber(value: unknown, fallback: number): number {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
+function readNumber(value: unknown, fallback: number): number {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function readOptionalPositiveNumber(value: unknown): number | undefined {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
+function readQ1BoundaryLayerScaleMode(value: unknown): "none" | "fit-bounds" | "preserve-area" {
+  return value === "fit-bounds" || value === "preserve-area" ? value : "none";
+}
+
+function baseCellIdFromElementId(elementId: number): CellId {
+  return `e${elementId}`;
 }
 
 function readPoint(value: unknown, fallback: Point): Point {

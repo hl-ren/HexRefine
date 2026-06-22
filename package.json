@@ -1,6 +1,6 @@
 {
   "name": "hexrefine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "HexRefine conforming Q1/Hex local refinement kernel and browser workbench.",
   "private": true,
   "author": "Huilong Ren <hlren@tongji.edu.cn>",

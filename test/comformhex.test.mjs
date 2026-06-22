@@ -22,6 +22,27 @@ import {
   replayHexRefineCommandScript
 } from "../dist/index.js";
 
+function inpSetIds(text, keyword, name) {
+  const lines = text.split(/\r?\n/);
+  const header = `*${keyword}, ${keyword.toLowerCase()}=${name}`;
+  const start = lines.findIndex((line) => line.trim() === header);
+  if (start < 0) {
+    return [];
+  }
+  const ids = [];
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (line.startsWith("*")) {
+      break;
+    }
+    if (line.length === 0) {
+      continue;
+    }
+    ids.push(...line.split(",").map((value) => Number(value.trim())).filter(Number.isFinite));
+  }
+  return ids;
+}
+
 test("HexRefine project entry exposes mesh selection and non-field refinement", () => {
   const mesh = createHexUnitCubeMesh(3, 3, 3);
   const selected = meshSelection.selectElementsByDistanceFunction(mesh, (x, y, z) =>
@@ -320,6 +341,56 @@ test("HexRefine project streams INP lines without changing file content", () => 
   assert.equal(streamed, text);
 });
 
+test("HexRefine project INP export includes automatic boundary element and node sets", () => {
+  const exported = buildRefinementSessionExport(createRefinementSession(createHexUnitCubeMesh(1, 1, 1)), {
+    mergeNodes: true
+  });
+  const inp = refinementSessionExportToInp(exported, { title: "boundary sets" });
+  const sides = ["XMIN", "XMAX", "YMIN", "YMAX", "ZMIN", "ZMAX"];
+
+  for (const side of sides) {
+    assert.deepEqual(inpSetIds(inp, "Elset", `AUTO_BND_${side}_1_EL`), [1]);
+    assert.equal(inpSetIds(inp, "Nset", `AUTO_BND_${side}_1_N`).length, 4);
+  }
+});
+
+test("HexRefine project INP boundary sets split disconnected boundary components", () => {
+  const mesh = {
+    kind: "H1",
+    nodes: [
+      [0, 0, 0],
+      [1, 0, 0],
+      [1, 1, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+      [1, 0, 1],
+      [1, 1, 1],
+      [0, 1, 1],
+      [3, 0, 0],
+      [4, 0, 0],
+      [4, 1, 0],
+      [3, 1, 0],
+      [3, 0, 1],
+      [4, 0, 1],
+      [4, 1, 1],
+      [3, 1, 1]
+    ],
+    elements: [
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      [9, 10, 11, 12, 13, 14, 15, 16]
+    ]
+  };
+  const exported = buildRefinementSessionExport(createRefinementSession(mesh), {
+    mergeNodes: true
+  });
+  const inp = refinementSessionExportToInp(exported, { title: "disconnected boundary sets" });
+
+  assert.deepEqual(inpSetIds(inp, "Elset", "AUTO_BND_XMIN_1_EL"), [1]);
+  assert.deepEqual(inpSetIds(inp, "Elset", "AUTO_BND_XMIN_2_EL"), [2]);
+  assert.equal(inpSetIds(inp, "Nset", "AUTO_BND_XMIN_1_N").length, 4);
+  assert.equal(inpSetIds(inp, "Nset", "AUTO_BND_XMIN_2_N").length, 4);
+});
+
 test("HexRefine project streams native session VTK and INP without materializing flat elements", () => {
   const session = createRefinementSession(createHexUnitCubeMesh(2, 1, 1));
   const sets = {
@@ -415,6 +486,10 @@ test("HexRefine project converts H1 export meshes to H20 before writing", () => 
   assert.equal(h20.mesh.nodes.length, 20);
   assert.equal(h20.mesh.elements[0].length, 20);
   assert.deepEqual(h20.sets.cellSets.get("VOL"), [1]);
+
+  const h20Inp = `${[...iteratePreparedInpLines(h20, { title: "H20 boundary sets" })].join("\n")}\n`;
+  assert.deepEqual(inpSetIds(h20Inp, "Elset", "AUTO_BND_ZMIN_1_EL"), [1]);
+  assert.equal(inpSetIds(h20Inp, "Nset", "AUTO_BND_ZMIN_1_N").length, 8);
 });
 
 test("HexRefine project reports user-friendly unsupported VTK cell type errors", () => {
