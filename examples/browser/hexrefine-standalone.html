@@ -4192,64 +4192,74 @@
         if (busy) {
           return;
         }
-        if (selected.size === 0) {
+        const nodeDerivedElementIds = selected.size === 0 && selectedNodes.size > 0
+          ? new Set([...selectedNodes].flatMap((nodeId) => nodeOwnersByNodeId().get(nodeId) ?? []))
+          : null;
+        const elementsToDelete = new Set(
+          [...(nodeDerivedElementIds ?? selected)]
+            .map((elementId) => Number(elementId))
+            .filter((elementId) => Number.isInteger(elementId) && elementId >= 1 && elementId <= mesh.elements.length)
+        );
+        if (elementsToDelete.size === 0) {
           setStatus("No elements selected for deletion.", false);
           return;
         }
-        const sourceElementCount = mesh.elements.length;
-        const recordKeptElements = selected.size > sourceElementCount * 0.5;
-        const deletedElementIds = recordKeptElements ? [] : sortedIdsFromSet(selected);
-        const keptElementIds = [];
-        const keptElements = [];
         const undoSnapshot = captureDeleteUndoSnapshot();
-        await runWithBusyPause("Deleting selected elements...");
-        for (let index = 0; index < mesh.elements.length; index += 1) {
-          const elementId = index + 1;
-          if (selected.has(elementId)) {
-            continue;
-          }
-          keptElements.push(mesh.elements[index]);
-          if (recordKeptElements) {
-            keptElementIds.push(elementId);
-          }
-          if (!recordKeptElements) {
-            keptElementIds.push(elementId);
-          }
-        }
-        mesh = {
-          kind: inferKind(),
-          nodes: mesh.nodes,
-          elements: keptElements
-        };
-        recordCommand("delete.elements", recordKeptElements
-          ? {
-              mode: "keep",
-              keptElementIds,
-              deletedElementCount: selected.size,
-              sourceElementCount
+        try {
+          const sourceElementCount = mesh.elements.length;
+          const recordKeptElements = elementsToDelete.size > sourceElementCount * 0.5;
+          const deletedElementIds = recordKeptElements ? [] : sortedIdsFromSet(elementsToDelete);
+          const keptElementIds = [];
+          const keptElements = [];
+          await runWithBusyPause("Deleting selected elements...");
+          for (let index = 0; index < mesh.elements.length; index += 1) {
+            const elementId = index + 1;
+            if (elementsToDelete.has(elementId)) {
+              continue;
             }
-          : {
-              mode: "delete",
-              elementIds: deletedElementIds,
-              deletedElementCount: selected.size,
-              sourceElementCount
-            });
-        remapCellSetsAfterElementCompaction(keptElementIds);
-        resetRefinementSession(mesh);
-        fitCameraToMesh();
-        selected = new Set();
-        selectedNodes = new Set();
-        setSelectCellSetPickEnabled(false);
-        preview = null;
-        q1OperationPreview = null;
-        lastResult = null;
-        lastPreparation = null;
-        deleteUndoSnapshots.push(undoSnapshot);
-        syncSliceControls();
-        updateReport();
-        draw();
-        setStatus("Selected elements deleted.", true);
-        setBusy(false);
+            keptElements.push(mesh.elements[index]);
+            keptElementIds.push(elementId);
+          }
+          const nextMesh = {
+            kind: inferKind(),
+            nodes: mesh.nodes.map((point) => [...point]),
+            elements: keptElements
+          };
+          recordCommand("delete.elements", recordKeptElements
+            ? {
+                mode: "keep",
+                keptElementIds,
+                deletedElementCount: elementsToDelete.size,
+                sourceElementCount,
+                derivedFromNodeSelection: Boolean(nodeDerivedElementIds)
+              }
+            : {
+                mode: "delete",
+                elementIds: deletedElementIds,
+                deletedElementCount: elementsToDelete.size,
+                sourceElementCount,
+                derivedFromNodeSelection: Boolean(nodeDerivedElementIds)
+              });
+          remapCellSetsAfterElementCompaction(keptElementIds);
+          resetRefinementSession(nextMesh);
+          fitCameraToMesh();
+          selected = new Set();
+          selectedNodes = new Set();
+          setSelectCellSetPickEnabled(false);
+          preview = null;
+          q1OperationPreview = null;
+          lastResult = null;
+          lastPreparation = null;
+          deleteUndoSnapshots.push(undoSnapshot);
+          syncSliceControls();
+          updateReport();
+          draw();
+          setStatus(`Deleted ${elementsToDelete.size} selected element${elementsToDelete.size === 1 ? "" : "s"}.`, true);
+        } catch (error) {
+          setStatus(`Delete failed: ${errorMessage(error)}`, false);
+        } finally {
+          setBusy(false);
+        }
       }
 
       async function runWithBusyPause(message) {
@@ -4373,6 +4383,8 @@
         elementCenterSpatialIndexCache = null;
         projectedCenterSpatialIndexCache = null;
         globalHexCenterIndexCache = null;
+        projectedElements = [];
+        surfaceItems = [];
         projectedElementsCache = null;
         renderProjectedElementsCache = null;
         projectedElementCache = null;
