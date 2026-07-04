@@ -152,12 +152,13 @@ function git(args, options = {}) {
 }
 
 function run(command, args, options = {}) {
-  const executable = process.platform === "win32" && command === "npm" ? "npm.cmd" : command;
-  const result = spawnSync(executable, args, {
+  const isWindowsNpm = process.platform === "win32" && command === "npm";
+  const result = spawnSync(isWindowsNpm ? "cmd.exe" : command, isWindowsNpm ? ["/d", "/s", "/c", command, ...args] : args, {
     cwd: options.cwd ?? root,
     stdio: "inherit"
   });
   if (result.status !== 0 && !options.allowFailure) {
-    throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}`);
+    const detail = result.error ? ` (${result.error.message})` : "";
+    throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}${detail}`);
   }
 }
