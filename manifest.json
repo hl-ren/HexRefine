@@ -1,0 +1,18 @@
+{
+  "name": "hexrefine",
+  "version": "0.2.0",
+  "description": "HexRefine conforming Q1/Hex local refinement kernel and browser workbench.",
+  "license": "UNLICENSED",
+  "generatedAt": "2026-07-04T06:19:30.251Z",
+  "entrypoints": {
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "browser": "web/index.html",
+    "workbench": "web/examples/browser/hexrefine.html"
+  },
+  "commands": {
+    "test": "npm test",
+    "build": "npm run build",
+    "examples": "npm run examples:vtk"
+  }
+}

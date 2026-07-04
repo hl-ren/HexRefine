@@ -1,0 +1,12 @@
+import type { MutablePoint, Point } from "./types.js";
+export declare function add(a: Point, b: Point): MutablePoint;
+export declare function sub(a: Point, b: Point): MutablePoint;
+export declare function scale(a: Point, factor: number): MutablePoint;
+export declare function mix(points: readonly Point[], weights: readonly number[]): MutablePoint;
+export declare function lerp(a: Point, b: Point, t: number): MutablePoint;
+export declare function norm(a: Point): number;
+export declare function distance(a: Point, b: Point): number;
+export declare function centroid(points: readonly Point[]): MutablePoint;
+export declare function pointEquals(a: Point, b: Point, tolerance: number): boolean;
+export declare function assertSameDimension(a: Point, b: Point): void;
+export declare function mustGet<T>(values: readonly T[], index: number): T;

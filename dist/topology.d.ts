@@ -1,0 +1,13 @@
+import type { Element, ElementKind } from "./types.js";
+export declare const Q1_EDGES: readonly number[][];
+export declare const H1_FACES: readonly number[][];
+export declare function elementKindFromNodeCount(nodeCount: number): ElementKind;
+export declare function boundariesOf(element: Element, kind: ElementKind): number[][];
+export declare function boundaryKey(boundary: readonly number[]): string;
+export declare function sameNodeSet(a: readonly number[], b: readonly number[]): boolean;
+export declare function h1Permutations(element: Element): number[][];
+export declare function alignHexFaceToBottom(element: Element, face: readonly number[]): number[];
+export declare function alignHexEdgeToVertical(element: Element, edge: readonly number[]): number[];
+export declare function alignQuadEdgeToFirst(element: Element, edge: readonly number[]): number[];
+export declare function alignQuadCornerToSecond(element: Element, cornerNodeId: number): number[];
+export declare function sharedNodes(a: readonly number[], b: readonly number[]): number[];
