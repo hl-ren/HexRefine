@@ -57,6 +57,8 @@
     "offline:run": "node scripts/run-offline-auto.mjs",
     "offline:run:direct": "node scripts/run-offline-workflow.mjs",
     "pages:build": "npm run examples:vtk && npm run standalone:build && node scripts/prepare-release.mjs",
+    "pages:deploy": "node scripts/deploy-pages.mjs",
+    "pages:deploy:push": "node scripts/deploy-pages.mjs --push",
     "pages:serve": "node scripts/serve-pages.mjs",
     "prepack": "npm run build",
     "release": "npm test && npm run examples:vtk && npm run standalone:build && node scripts/prepare-release.mjs && npm pack --pack-destination release --cache .npm-cache",
