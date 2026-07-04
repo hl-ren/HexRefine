@@ -136,8 +136,7 @@ function readArg(name) {
 function git(args, options = {}) {
   const result = spawnSync("git", args, {
     cwd: options.cwd ?? root,
-    encoding: "utf8",
-    shell: process.platform === "win32"
+    encoding: "utf8"
   });
   if (result.status !== 0 && !options.allowFailure) {
     throw new Error(`git ${args.join(" ")} failed\n${result.stderr || result.stdout}`);
@@ -153,10 +152,10 @@ function git(args, options = {}) {
 }
 
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
+  const executable = process.platform === "win32" && command === "npm" ? "npm.cmd" : command;
+  const result = spawnSync(executable, args, {
     cwd: options.cwd ?? root,
-    stdio: "inherit",
-    shell: process.platform === "win32"
+    stdio: "inherit"
   });
   if (result.status !== 0 && !options.allowFailure) {
     throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}`);
